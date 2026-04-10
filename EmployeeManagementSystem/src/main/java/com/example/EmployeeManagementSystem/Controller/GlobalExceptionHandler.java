@@ -89,5 +89,15 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(SubscriptionAlreadyExists.class)
+    public ResponseEntity<Map<String, Object>> handleSubscriptionAlreadyExists(
+            SubscriptionAlreadyExists exception, WebRequest request) {
+
+        return new ResponseEntity<>(
+                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
 
 }
