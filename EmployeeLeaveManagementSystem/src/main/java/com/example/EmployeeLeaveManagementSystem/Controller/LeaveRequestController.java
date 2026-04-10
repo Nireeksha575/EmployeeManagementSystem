@@ -1,0 +1,52 @@
+package com.example.EmployeeLeaveManagementSystem.Controller;
+
+import com.example.EmployeeLeaveManagementSystem.DTO.ActionDTO;
+import com.example.EmployeeLeaveManagementSystem.DTO.LeaveRequestDTO;
+import com.example.EmployeeLeaveManagementSystem.DTO.LeaveResponseDTO;
+import com.example.EmployeeLeaveManagementSystem.Entity.LeaveRequest;
+import com.example.EmployeeLeaveManagementSystem.Service.LeaveRequestService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("leave_requests")
+public class LeaveRequestController {
+    private final LeaveRequestService leaveRequestService;
+
+    public LeaveRequestController(LeaveRequestService leaveRequestService) {
+        this.leaveRequestService = leaveRequestService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<LeaveResponseDTO>> getAllLeaveRequest() {
+        return ResponseEntity.ok(leaveRequestService.getAllTheLeaveRequest());
+    }
+
+    @PostMapping("/{EmployeeId}")
+    public ResponseEntity<?> addLeaveRequest(@PathVariable long EmployeeId,@RequestBody LeaveRequestDTO dto){
+        return leaveRequestService.createRequest(EmployeeId,dto);
+    }
+
+    @GetMapping("/pending/{ManagerId}")
+    public ResponseEntity<List<LeaveResponseDTO>> getAllTheLeaveRequests(@PathVariable long ManagerId) {
+        return ResponseEntity.ok(leaveRequestService.getAllThePendingLeaveRequests(ManagerId));
+    }
+    @PutMapping("/approval")
+    public ResponseEntity<?> updateLeaveRequestStatus(@RequestBody ActionDTO actionDTO){
+      return leaveRequestService.updateLeaveRequestStatus(actionDTO);
+    }
+
+    @PutMapping("/cancel/{leaveId}")
+    public ResponseEntity<?> cancelLeaveRequest(@RequestParam String email,@PathVariable long leaveId){
+      return leaveRequestService.cancelLeaveRequest(email, leaveId);
+    }
+
+    @GetMapping("/employee/{employeeId}")
+    public ResponseEntity<?> getEmployeeLeaves(@PathVariable long employeeId) {
+        return leaveRequestService.getLeaveRequestsByEmployee(employeeId);
+    }
+
+}

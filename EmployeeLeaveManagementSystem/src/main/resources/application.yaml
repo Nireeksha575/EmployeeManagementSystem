@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: EmployeeLeaveManagementSystem
+
+  datasource :
+    url : jdbc:mysql://localhost:3306/leave_management_db
+    username : ${USER_NAME}
+    password : ${PASSWORD}
+
+  jpa:
+    hibernate :
+      ddl-auto: update
+    show-sql: true
+
+  mvc:
+    cors:
+      mappings:
+        "[/**]":
+          allowed-origins: "*"
+          allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+          allowed-headers: "*"
+          allow-credentials: false
