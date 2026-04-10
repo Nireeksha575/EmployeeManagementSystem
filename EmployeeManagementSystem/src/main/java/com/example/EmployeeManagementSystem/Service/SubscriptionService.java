@@ -176,7 +176,7 @@ public class SubscriptionService {
     }
 
     public List<SubscriptionDTO> getSubscriptionOfuser(long id) {
-        List<Subscription> subscriptions= subscriptionRepository.findByUser_userId(id);
+        List<Subscription> subscriptions= subscriptionRepository.findByEmployee_employeeId(id);
         List<SubscriptionDTO> subscriptionDTOList=new ArrayList<>();
         for (Subscription subscription:subscriptions){
             SubscriptionDTO dto=convertToDTO(subscription);

@@ -18,7 +18,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription,Long>
             @Param("status") String status
     );
 
-    List<Subscription> findByUser_userId(long id);
+    List<Subscription> findByEmployee_employeeId(long id);
 
     @Query(value = "SELECT * FROM subscription s WHERE s.status = :status AND s.next_delivery_time IS NOT NULL AND s.next_delivery_time <= :currentTime", nativeQuery = true)
     List<Subscription> findDueSubscriptions(
