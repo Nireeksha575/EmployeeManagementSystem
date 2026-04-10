@@ -44,7 +44,6 @@ public class DeliveryTimeService {
         ZonedDateTime now=ZonedDateTime.now(userZone);
         DayOfWeek today = now.getDayOfWeek();
 
-
         int daysToAdd = dayOfWeek.getValue() - today.getValue();
 
         if (daysToAdd == 0) {
@@ -54,7 +53,6 @@ public class DeliveryTimeService {
                 return ZonedDateTime.of(now.toLocalDate().plusDays(7), slotTime,userZone).toInstant();
             }
         }
-
         if (daysToAdd < 0) {
             daysToAdd += 7;
         }
@@ -62,7 +60,6 @@ public class DeliveryTimeService {
         ZonedDateTime deliveryTime = ZonedDateTime.of(
                 now.toLocalDate().plusDays(daysToAdd),slotTime,userZone);
         return deliveryTime.toInstant();
-
     }
 
     public Instant getNextDeliveryTime(Subscription subscription) {

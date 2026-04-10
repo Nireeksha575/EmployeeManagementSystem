@@ -26,78 +26,95 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(EmployeeNotFound.class)
-    public ResponseEntity<Map<String,Object>> handelEmployeeNotFound(EmployeeNotFound exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.NOT_FOUND, exception.getMessage(), request),
-                HttpStatus.NOT_FOUND
-        );
+    public ResponseEntity<Map<String, Object>> handleEmployeeNotFound(
+            EmployeeNotFound ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request),
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(InvalidStartDateException.class)
-    public ResponseEntity<Map<String,Object>> handelInvalidStartDateException(InvalidStartDateException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleInvalidStartDate(
+            InvalidStartDateException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidEndDateException.class)
-    public ResponseEntity<Map<String,Object>> handelInvalidEndDateException(InvalidEndDateException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleInvalidEndDate(
+            InvalidEndDateException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(OverlappingLeaveException.class)
-    public ResponseEntity<Map<String,Object>> handelOverlappingLeaveException(OverlappingLeaveException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleOverlappingLeave(
+            OverlappingLeaveException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request),
+                HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(DuplicateRequestException.class)
-    public ResponseEntity<Map<String,Object>> handelDuplicateRequestException(DuplicateRequestException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleDuplicateRequest(
+            DuplicateRequestException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(LeaveRequestNotFoundException.class)
-    public ResponseEntity<Map<String,Object>> handelLeaveRequestNotFoundException(LeaveRequestNotFoundException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleLeaveNotFound(
+            LeaveRequestNotFoundException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request),
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(InvalidManagerException.class)
-    public ResponseEntity<Map<String,Object>> handelLeaveInvalidManagerException(InvalidManagerException exception, WebRequest request){
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
-    }
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String,Object>> handleDataIntegrity(
-            DataIntegrityViolationException ex, WebRequest request) {
-        return new ResponseEntity<>(
-                buildError(HttpStatus.CONFLICT,
-                        "Cannot delete: related records exist", request),
-                HttpStatus.CONFLICT
-        );
+    public ResponseEntity<Map<String, Object>> handleInvalidManager(
+            InvalidManagerException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.FORBIDDEN, ex.getMessage(), request),
+                HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(SubscriptionAlreadyExists.class)
-    public ResponseEntity<Map<String, Object>> handleSubscriptionAlreadyExists(
-            SubscriptionAlreadyExists exception, WebRequest request) {
-
-        return new ResponseEntity<>(
-                buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request),
-                HttpStatus.BAD_REQUEST
-        );
+    public ResponseEntity<Map<String, Object>> handleSubscriptionExists(
+            SubscriptionAlreadyExists ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.CONFLICT, ex.getMessage(), request),
+                HttpStatus.CONFLICT);
     }
 
 
+    @ExceptionHandler(VendorNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleVendorNotFound(
+            VendorNotFoundException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request),
+                HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RestaurantNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleRestaurantNotFound(
+            RestaurantNotFoundException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request),
+                HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(
+            UnauthorizedAccessException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.FORBIDDEN, ex.getMessage(), request),
+                HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(
+            IllegalArgumentException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request),
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(
+            DataIntegrityViolationException ex, WebRequest request) {
+        return new ResponseEntity<>(
+                buildError(HttpStatus.CONFLICT, "Cannot delete: related records exist", request),
+                HttpStatus.CONFLICT);
+    }
 }

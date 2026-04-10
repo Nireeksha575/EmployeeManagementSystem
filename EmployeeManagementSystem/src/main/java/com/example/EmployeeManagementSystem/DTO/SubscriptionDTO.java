@@ -16,6 +16,34 @@ public class SubscriptionDTO {
     private SubscriptionStatus status;
     private ZonedDateTime nextDeliveryTime;
 
+    private Long restaurantId;
+    private String restaurantName;
+    private String restaurantAddress;
+
+    public void setRestaurantId(Long restaurantId) {
+        this.restaurantId = restaurantId;
+    }
+
+    public void setRestaurantName(String restaurantName) {
+        this.restaurantName = restaurantName;
+    }
+
+    public void setRestaurantAddress(String restaurantAddress) {
+        this.restaurantAddress = restaurantAddress;
+    }
+
+    public Long getRestaurantId() {
+        return restaurantId;
+    }
+
+    public String getRestaurantName() {
+        return restaurantName;
+    }
+
+    public String getRestaurantAddress() {
+        return restaurantAddress;
+    }
+
     public long getSubscriptionId() {
         return subscriptionId;
     }

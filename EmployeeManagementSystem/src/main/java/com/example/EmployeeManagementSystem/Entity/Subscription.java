@@ -27,6 +27,10 @@ public class Subscription {
     @JoinColumn(name="employee_id")
     private Employee employee;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "restaurant_id", nullable = false)
+    private Restaurant restaurant;
+
     @PrePersist
     public void init(){
         this.created_at=LocalTime.now();
@@ -95,4 +99,6 @@ public class Subscription {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
+    public Restaurant getRestaurant() { return restaurant; }
+    public void setRestaurant(Restaurant restaurant) { this.restaurant = restaurant; }
 }
