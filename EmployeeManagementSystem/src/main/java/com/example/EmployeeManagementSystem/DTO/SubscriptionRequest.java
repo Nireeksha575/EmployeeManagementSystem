@@ -15,6 +15,31 @@ public class SubscriptionRequest {
     @NotNull
     @NotEmpty
     private List<MealSlot> mealSlots;
+    @NotNull
+    private List<SlotOrder> slotOrders;
+    public static class SlotOrder {
+        @NotNull
+        private MealSlot mealSlot;
+
+        @NotNull
+        private Long restaurantId;
+
+        public MealSlot getMealSlot() {
+            return mealSlot;
+        }
+
+        public void setMealSlot(MealSlot mealSlot) {
+            this.mealSlot = mealSlot;
+        }
+
+        public Long getRestaurantId() {
+            return restaurantId;
+        }
+
+        public void setRestaurantId(Long restaurantId) {
+            this.restaurantId = restaurantId;
+        }
+    }
 
     public ScheduleType getScheduleType() {
         return scheduleType;
@@ -47,4 +72,7 @@ public class SubscriptionRequest {
     public void setEmployeeId(long employeeId) {
         this.employeeId = employeeId;
     }
+
+    public List<SlotOrder> getSlotOrders() { return slotOrders; }
+    public void setSlotOrders(List<SlotOrder> slotOrders) { this.slotOrders = slotOrders; }
 }

@@ -1,11 +1,16 @@
 package com.example.EmployeeManagementSystem.Service;
 
+import com.example.EmployeeManagementSystem.DTO.VendorDTO;
+import com.example.EmployeeManagementSystem.DTO.VendorRequest;
 import com.example.EmployeeManagementSystem.Entity.Delivery;
 import com.example.EmployeeManagementSystem.Entity.Subscription;
+import com.example.EmployeeManagementSystem.Entity.Vendor;
 import com.example.EmployeeManagementSystem.Enum.DeliveryStatus;
 import com.example.EmployeeManagementSystem.Enum.SubscriptionStatus;
+import com.example.EmployeeManagementSystem.Exception.VendorNotFoundException;
 import com.example.EmployeeManagementSystem.Repository.DeliveryRepository;
 import com.example.EmployeeManagementSystem.Repository.SubscriptionRepository;
+import com.example.EmployeeManagementSystem.Repository.VendorRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DeliveryService {
@@ -77,5 +83,71 @@ public class DeliveryService {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
         return deliveryRepository.findRecentDeliveriesBySubscription(subscription, DeliveryStatus.SCHEDULED);
+    }
+
+    @Service
+    public static class VendorService {
+
+        private static final Logger log = LoggerFactory.getLogger(VendorService.class);
+        private final VendorRepo vendorRepo;
+
+        public VendorService(VendorRepo vendorRepo) {
+            this.vendorRepo = vendorRepo;
+        }
+
+        public VendorDTO registerVendor(VendorRequest request) {
+            if (vendorRepo.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException(
+                        "A vendor with email " + request.getEmail() + " already exists");
+            }
+            Vendor vendor = new Vendor();
+            vendor.setName(request.getName());
+            vendor.setEmail(request.getEmail());
+            vendor.setPhone(request.getPhone());
+            Vendor saved = vendorRepo.save(vendor);
+            log.info("Vendor registered: {} (id={})", saved.getName(), saved.getId());
+            return toDTO(saved);
+        }
+
+        public VendorDTO getVendor(Long id) {
+            return toDTO(findOrThrow(id));
+        }
+
+        public List<VendorDTO> getAllVendors() {
+            return vendorRepo.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+
+        public VendorDTO updateVendor(Long id, VendorRequest request) {
+            Vendor vendor = findOrThrow(id);
+            if (request.getName() != null) vendor.setName(request.getName());
+            if (request.getPhone() != null) vendor.setPhone(request.getPhone());
+            // Email update not allowed to avoid breaking restaurant ownership references
+            return toDTO(vendorRepo.save(vendor));
+        }
+
+        public void deleteVendor(Long id) {
+            Vendor vendor = findOrThrow(id);
+            vendorRepo.delete(vendor);
+            log.info("Vendor deleted: id={}", id);
+        }
+
+        // ── helpers ──────────────────────────────────────────────────────────────
+
+        private Vendor findOrThrow(Long id) {
+            return vendorRepo.findById(id)
+                    .orElseThrow(() -> new VendorNotFoundException("Vendor with id " + id + " not found"));
+        }
+
+        private VendorDTO toDTO(Vendor vendor) {
+            VendorDTO dto = new VendorDTO();
+            dto.setId(vendor.getId());
+            dto.setName(vendor.getName());
+            dto.setEmail(vendor.getEmail());
+            dto.setPhone(vendor.getPhone());
+            dto.setRegisteredAt(vendor.getRegisteredAt());
+            return dto;
+        }
     }
 }

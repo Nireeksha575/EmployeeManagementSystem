@@ -56,7 +56,7 @@ public class SubscriptionController {
 
     @GetMapping("/user/{id}")
     public ResponseEntity<List<SubscriptionDTO>> getSubscriptionOfUser(@PathVariable long id){
-        return ResponseEntity.ok(subscriptionService.getSubscriptionOfuser(id));
+        return ResponseEntity.ok(subscriptionService.getSubscriptionOfUser(id));
     }
 
 }
