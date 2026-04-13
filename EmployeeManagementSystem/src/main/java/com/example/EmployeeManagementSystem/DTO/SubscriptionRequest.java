@@ -9,7 +9,6 @@ import java.time.DayOfWeek;
 import java.util.List;
 
 public class SubscriptionRequest {
-    private long employeeId;
     private ScheduleType scheduleType;
     private DayOfWeek dayOfWeek;
     @NotNull
@@ -65,13 +64,7 @@ public class SubscriptionRequest {
         this.dayOfWeek = dayOfWeek;
     }
 
-    public long getEmployeeId() {
-        return employeeId;
-    }
 
-    public void setEmployeeId(long employeeId) {
-        this.employeeId = employeeId;
-    }
 
     public List<SlotOrder> getSlotOrders() { return slotOrders; }
     public void setSlotOrders(List<SlotOrder> slotOrders) { this.slotOrders = slotOrders; }

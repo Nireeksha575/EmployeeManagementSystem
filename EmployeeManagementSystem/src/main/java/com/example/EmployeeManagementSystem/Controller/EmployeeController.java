@@ -5,6 +5,7 @@ import com.example.EmployeeManagementSystem.Entity.Employee;
 import com.example.EmployeeManagementSystem.Service.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/employee")
@@ -20,10 +21,17 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<Employee> addEmployee(@RequestBody EmployeeDTO employee){
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(employeeService.createEmployee(employee));
+
+    }
+
+    @PostMapping("/register/manager")
+    public ResponseEntity<Employee> addManager(@RequestBody EmployeeDTO employee){
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(employeeService.createManager(employee));
 
     }
 
@@ -39,8 +47,9 @@ public class EmployeeController {
     }
 
     //should be done by manager
-    @PutMapping("/{ManagerId}/inactive")
-    public ResponseEntity<String> inactivateEmployee(@PathVariable long ManagerId,@RequestParam long employeeId) {
-        return employeeService.inactivateUser(ManagerId, employeeId);
+    @PutMapping("/inactive")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<String> inactivateEmployee(@RequestParam long employeeId) {
+        return employeeService.inactivateUser(employeeId);
     }
 }

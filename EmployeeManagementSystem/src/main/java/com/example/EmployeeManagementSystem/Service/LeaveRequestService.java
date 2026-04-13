@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -123,13 +124,7 @@ public class LeaveRequestService {
     }
 
     //Only for manager
-    public List<LeaveResponseDTO> getAllThePendingLeaveRequests(long ManagerId){
-        var manager=employeeRepo.findById(ManagerId).orElseThrow(
-                ()->new EmployeeNotFound("Manager with id: "+ManagerId+" is not found")
-        );
-        if(manager.getRole()== Role.EMPLOYEE){
-            throw new InvalidManagerException("Only manager can see the pending leave requests");
-        }
+    public List<LeaveResponseDTO> getAllThePendingLeaveRequests(){
         List<LeaveRequest> requestList=leaveRequestRepo.findByStatus(LeaveStatus.PENDING);
         List<LeaveResponseDTO> responseDTOS=new ArrayList<>();
         for(LeaveRequest request:requestList){
@@ -143,14 +138,7 @@ public class LeaveRequestService {
         if (actionDTO.getAction() == null) {
             return ResponseEntity.badRequest().body("Action is required");
         }
-        long managerId=actionDTO.getManagerId();
         log.info("Updating leave request status for id: {}", actionDTO.getLeaveRequestId());
-        Employee manager=employeeRepo.findById(managerId).orElseThrow(
-                ()->new EmployeeNotFound("Manager with id: "+managerId+" is not found")
-        );
-        if(manager.getRole()== Role.EMPLOYEE){
-            throw new InvalidManagerException("Only manager can update leave requests");
-        }
 
         var leaveRequest=leaveRequestRepo.findById(actionDTO.getLeaveRequestId()).orElseThrow(
                 ()-> new LeaveRequestNotFoundException("LeaveRequest with id:"+actionDTO.getLeaveRequestId()+" not found")
@@ -162,7 +150,6 @@ public class LeaveRequestService {
                             + leaveRequest.getStatus());
         }
 
-         leaveRequest.setManager(manager.getName());
          if(actionDTO.getAction().equalsIgnoreCase("approved")){
              leaveRequest.setStatus(LeaveStatus.APPROVED);
          }
@@ -214,11 +201,11 @@ public class LeaveRequestService {
         return responseDTO;
     }
 
-    public ResponseEntity<?> getLeaveRequestsByEmployee(long employeeId) {
-        log.info("Fetching leave requests for employee: {}", employeeId);
+    public ResponseEntity<?> getLeaveRequestsByEmployee(Authentication authentication) {
+        log.info("Fetching leave requests for employee: {}", authentication.getName());
 
-        Employee employee = employeeRepo.findById(employeeId)
-                .orElseThrow(() -> new EmployeeNotFound("Employee not found: " + employeeId));
+        Employee employee = employeeRepo.findByName(authentication.getName())
+                .orElseThrow(() -> new EmployeeNotFound("Employee not found: " +authentication.getName() ));
 
         List<LeaveRequest> requests = leaveRequestRepo.findByEmployeeOrderByStartDateDesc(employee);
         List<LeaveResponseDTO> response = requests.stream()
@@ -226,8 +213,7 @@ public class LeaveRequestService {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
-                "employeeId", employeeId,
-                "employeeName", employee.getName(),
+                "employeeName", authentication.getName(),
                 "totalRequests", response.size(),
                 "requests", response
         ));

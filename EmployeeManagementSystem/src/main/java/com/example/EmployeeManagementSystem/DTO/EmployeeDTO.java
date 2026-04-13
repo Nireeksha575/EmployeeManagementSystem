@@ -5,6 +5,7 @@ public class EmployeeDTO {
     private String name;
     private String email;
     private String dept;
+    private String password;
     private String timezone;
 
     public String getTimezone() {
@@ -39,4 +40,11 @@ public class EmployeeDTO {
         this.dept = dept;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

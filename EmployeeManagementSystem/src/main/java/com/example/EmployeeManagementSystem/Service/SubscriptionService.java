@@ -14,6 +14,7 @@ import com.example.EmployeeManagementSystem.Exception.SubscriptionAlreadyExists;
 import com.example.EmployeeManagementSystem.Repository.EmployeeRepo;
 import com.example.EmployeeManagementSystem.Repository.RestaurantRepository;
 import com.example.EmployeeManagementSystem.Repository.SubscriptionRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -51,10 +52,10 @@ public class SubscriptionService {
      * - Restaurant must support the requested meal slot
      * - No duplicate active subscription for the same employee + slot combination
      */
-    public void addSubscription(SubscriptionRequest request) {
-        Employee employee = employeeRepo.findById(request.getEmployeeId())
+    public void addSubscription(SubscriptionRequest request,Authentication authentication) {
+        Employee employee = employeeRepo.findByName(authentication.getName())
                 .orElseThrow(() -> new EmployeeNotFound(
-                        "Employee with id " + request.getEmployeeId() + " not found"));
+                        "Employee with id " + authentication.getName() + " not found"));
 
         if (request.getSlotOrders() == null || request.getSlotOrders().isEmpty()) {
             throw new IllegalArgumentException("slotOrders cannot be null or empty");
@@ -90,9 +91,9 @@ public class SubscriptionService {
 
             // 3. Check for duplicate active subscription (same employee + slot)
             if (subscriptionRepository.checkSubscriptionExists(
-                    request.getEmployeeId(), slot.name(), SubscriptionStatus.ACTIVE.name()) > 0) {
+                    employee.getEmployeeId(), slot.name(), SubscriptionStatus.ACTIVE.name()) > 0) {
                 throw new SubscriptionAlreadyExists(
-                        "Employee " + request.getEmployeeId() +
+                        "Employee " + employee.getEmployeeId() +
                                 " already has an active " + slot + " subscription. " +
                                 "Cancel the existing one before subscribing to a new restaurant.");
             }
@@ -188,8 +189,8 @@ public class SubscriptionService {
         return subscriptionRepository.save(subscription);
     }
 
-    public List<SubscriptionDTO> getSubscriptionOfUser(long id) {
-        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_employeeId(id);
+    public List<SubscriptionDTO> getSubscriptionOfUser(Authentication authentication) {
+        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_name(authentication.getName());
         List<SubscriptionDTO> dtoList = new ArrayList<>();
         for (Subscription s : subscriptions) {
             dtoList.add(convertToDTO(s));

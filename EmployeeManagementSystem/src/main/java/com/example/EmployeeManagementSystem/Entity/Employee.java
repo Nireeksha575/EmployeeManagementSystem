@@ -3,15 +3,23 @@ package com.example.EmployeeManagementSystem.Entity;
 import com.example.EmployeeManagementSystem.Enum.Role;
 import com.example.EmployeeManagementSystem.Enum.Status;
 import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
-public class Employee {
+public class Employee implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long employeeId;
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String name;
     @Column(unique = true, nullable = false)
     private String email;
@@ -19,6 +27,7 @@ public class Employee {
     private String dept;
     @Enumerated(EnumType.STRING)
     private Status status;
+    private String password;
     private LocalDate joined_at;
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -94,9 +103,53 @@ public class Employee {
     public void initialSetup() {
         this.status = Status.ACTIVE;
         this.joined_at = LocalDate.now();
-        this.role = Role.EMPLOYEE;
         if (this.timezone == null || this.timezone.isBlank()) {
             this.timezone = "UTC";
         }
     }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Set<SimpleGrantedAuthority> authorities=new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_"+role.name()));
+        authorities.addAll(role.getPermissions().stream()
+                .map(permissions -> new SimpleGrantedAuthority(permissions.name()))
+                .collect(Collectors.toSet()));
+        return authorities;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.name;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+
 }

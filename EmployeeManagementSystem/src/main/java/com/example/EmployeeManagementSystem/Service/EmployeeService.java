@@ -11,6 +11,7 @@ import com.example.EmployeeManagementSystem.Repository.LeaveRequestRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -21,10 +22,12 @@ public class EmployeeService {
     private static final Logger log = LoggerFactory.getLogger(EmployeeService.class);
     private final EmployeeRepo employeeRepo;
     private final LeaveRequestRepo leaveRequestRepo;
+    private final PasswordEncoder passwordEncoder;
 
-    public EmployeeService(EmployeeRepo employeeRepo,LeaveRequestRepo leaveRequestRepo) {
+    public EmployeeService(EmployeeRepo employeeRepo, LeaveRequestRepo leaveRequestRepo, PasswordEncoder passwordEncoder) {
         this.employeeRepo = employeeRepo;
         this.leaveRequestRepo=leaveRequestRepo;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Employee> getAllEmployees() {
@@ -42,7 +45,30 @@ public class EmployeeService {
         } else {
             employee.setTimezone("UTC");
         }
+        employee.setRole(Role.EMPLOYEE);
+        if(employeeDTO.getPassword()==null){
+            throw new RuntimeException("Passowrd is required");
+        }
+        employee.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
+        return employeeRepo.save(employee);
+    }
 
+    public Employee createManager(EmployeeDTO employeeDTO) {
+        log.info("Creating new employee with email: {}", employeeDTO.getEmail());
+        var employee = new Employee();
+        if (employeeDTO.getName() != null)  employee.setName(employeeDTO.getName());
+        if (employeeDTO.getEmail() != null) employee.setEmail(employeeDTO.getEmail());
+        if (employeeDTO.getDept() != null)  employee.setDept(employeeDTO.getDept());
+        if (employeeDTO.getTimezone() != null && isValidTimezone(employeeDTO.getTimezone())) {
+            employee.setTimezone(employeeDTO.getTimezone());
+        } else {
+            employee.setTimezone("UTC");
+        }
+        employee.setRole(Role.MANAGER);
+        if(employeeDTO.getPassword()==null){
+            throw new RuntimeException("Passowrd is required");
+        }
+        employee.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
         return employeeRepo.save(employee);
     }
 
@@ -71,16 +97,12 @@ public class EmployeeService {
         employeeRepo.delete(employee);
     }
 
-    public ResponseEntity<String> inactivateUser(long ManagerId, long employeeId) {
-        var manager = employeeRepo.findById(ManagerId).orElseThrow(
-                () -> new EmployeeNotFound("Manager with id:" + ManagerId + " not found")
-        );
+    public ResponseEntity<String> inactivateUser(long employeeId) {
+
         var employee = employeeRepo.findById(employeeId).orElseThrow(
                 () -> new EmployeeNotFound("Employee with id:" + employeeId + " not found")
         );
-        if (manager.getRole() == Role.EMPLOYEE) {
-            return ResponseEntity.badRequest().body("Only manager can inactivate the user");
-        }
+
         if (employee.getStatus() == Status.INACTIVE) {
             return ResponseEntity.badRequest()
                     .body("Status of the employee with id: " + employeeId + " is already set to inactive");

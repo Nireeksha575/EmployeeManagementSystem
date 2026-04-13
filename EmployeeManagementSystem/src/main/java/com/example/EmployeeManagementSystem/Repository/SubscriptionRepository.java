@@ -25,4 +25,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription,Long>
             @Param("status") String status,
             @Param("currentTime") Instant currentTime  // ← was LocalDateTime
     );
+
+    List<Subscription> findByEmployee_name(String name);
+    List<Subscription> findByEmployee_Email(String email);
 }
