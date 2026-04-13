@@ -31,6 +31,10 @@ public class Employee implements UserDetails {
     private LocalDate joined_at;
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Column(nullable = true)
+    private String totpSecret;
+    @Column(nullable = false)
+    private boolean totpEnabled = false;
     /** IANA timezone id, e.g. "Asia/Kolkata", "America/New_York". Defaults to UTC. */
     @Column(nullable = false)
     private String timezone = "UTC";
@@ -151,5 +155,19 @@ public class Employee implements UserDetails {
         this.password = password;
     }
 
+    public String getTotpSecret() {
+        return totpSecret;
+    }
 
+    public boolean isTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public void setTotpEnabled(boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
+    }
 }

@@ -3,6 +3,7 @@ package com.example.EmployeeManagementSystem.config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class BasicAuthConfig {
     @Bean
+    @Order(2)
    public SecurityFilterChain basicAuth(HttpSecurity security){
       security
                .csrf(csrf-> csrf.disable())
