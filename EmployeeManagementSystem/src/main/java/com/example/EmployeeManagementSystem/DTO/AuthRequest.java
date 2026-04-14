@@ -1,8 +1,10 @@
 package com.example.EmployeeManagementSystem.DTO;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AuthRequest {
+    @JsonProperty("username")
     private String Username;
     private String Password;
 
