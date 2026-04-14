@@ -1,7 +1,18 @@
 package com.example.EmployeeManagementSystem.Entity;
 
+import com.example.EmployeeManagementSystem.Enum.Role;
 import jakarta.persistence.*;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a restaurant vendor/owner.
@@ -10,7 +21,7 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "vendor")
-public class Vendor {
+public class Vendor implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +35,9 @@ public class Vendor {
 
     @Column(nullable = false)
     private String phone;
+
+    @Column(nullable = false)
+    private String password;
 
     private LocalDate registeredAt;
 
@@ -46,4 +60,49 @@ public class Vendor {
 
     public LocalDate getRegisteredAt() { return registeredAt; }
     public void setRegisteredAt(LocalDate registeredAt) { this.registeredAt = registeredAt; }
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Set<SimpleGrantedAuthority> authorities=new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_VENDOR"));
+        authorities.addAll(Role.VENDOR.getPermissions().stream()
+                .map(permissions -> new SimpleGrantedAuthority(permissions.name()))
+                .collect(Collectors.toSet()));
+        return authorities;
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

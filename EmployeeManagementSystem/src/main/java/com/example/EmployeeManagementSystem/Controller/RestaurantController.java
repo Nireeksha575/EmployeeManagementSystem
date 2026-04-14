@@ -6,6 +6,8 @@ import com.example.EmployeeManagementSystem.Enum.MealSlot;
 import com.example.EmployeeManagementSystem.Service.RestaurantService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,9 +46,10 @@ public class RestaurantController {
      * Request body must include vendorId — the service validates the vendor exists.
      */
     @PostMapping
-    public ResponseEntity<RestaurantDTO> createRestaurant(@RequestBody RestaurantRequest request) {
+    @PreAuthorize("hasRole('VENDOR')")
+    public ResponseEntity<RestaurantDTO> createRestaurant(@RequestBody RestaurantRequest request,Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(restaurantService.createRestaurant(request));
+                .body(restaurantService.createRestaurant(request,authentication));
     }
 
     /**
@@ -54,9 +57,11 @@ public class RestaurantController {
      * vendorId in the request body is used to verify ownership before any change is made.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<RestaurantDTO> updateRestaurant(@PathVariable Long id,
-                                                          @RequestBody RestaurantRequest request) {
-        return ResponseEntity.ok(restaurantService.updateRestaurant(id, request));
+                                                          @RequestBody RestaurantRequest request,
+                                                          Authentication authentication) {
+        return ResponseEntity.ok(restaurantService.updateRestaurant(id, request,authentication));
     }
 
     /**
@@ -65,9 +70,10 @@ public class RestaurantController {
      * Pass vendorId as a query param so ownership can be verified.
      */
     @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<String> deactivateRestaurant(@PathVariable Long id,
-                                                       @RequestParam Long vendorId) {
-        restaurantService.deactivateRestaurant(id, vendorId);
+                                                       Authentication authentication) {
+        restaurantService.deactivateRestaurant(id, authentication);
         return ResponseEntity.ok("Restaurant " + id + " has been deactivated.");
     }
 
@@ -75,9 +81,10 @@ public class RestaurantController {
      * List all active restaurants owned by a specific vendor.
      * Only the vendor themselves should call this to see their portfolio.
      */
-    @GetMapping("/vendor/{vendorId}")
-    public ResponseEntity<List<RestaurantDTO>> getRestaurantsByVendor(@PathVariable Long vendorId) {
-        return ResponseEntity.ok(restaurantService.getRestaurantsByVendor(vendorId));
+    @GetMapping("/vendor")
+    @PreAuthorize("hasRole('VENDOR')")
+    public ResponseEntity<List<RestaurantDTO>> getRestaurantsByVendor(Authentication authentication) {
+        return ResponseEntity.ok(restaurantService.getRestaurantsByVendor(authentication));
     }
 
     // ── EMPLOYEE / MANAGER read-only browse ──────────────────────────────────
@@ -87,6 +94,7 @@ public class RestaurantController {
      * Employees use this to discover available restaurants before subscribing.
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('RESTAURANTS_READ')")
     public ResponseEntity<List<RestaurantDTO>> getAllActiveRestaurants() {
         return ResponseEntity.ok(restaurantService.getAllActiveRestaurants());
     }
@@ -95,6 +103,7 @@ public class RestaurantController {
      * Get a specific restaurant by id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('RESTAURANTS_READ')")
     public ResponseEntity<RestaurantDTO> getRestaurant(@PathVariable Long id) {
         return ResponseEntity.ok(restaurantService.getRestaurant(id));
     }
@@ -105,6 +114,7 @@ public class RestaurantController {
      * Employees call this when building their subscription to see valid options for each slot.
      */
     @GetMapping("/by-slot")
+    @PreAuthorize("hasAnyRole('VENDOR','EMPLOYEE','MANAGER')")
     public ResponseEntity<List<RestaurantDTO>> getRestaurantsByMealSlot(@RequestParam MealSlot slot) {
         return ResponseEntity.ok(restaurantService.getRestaurantsByMealSlot(slot));
     }

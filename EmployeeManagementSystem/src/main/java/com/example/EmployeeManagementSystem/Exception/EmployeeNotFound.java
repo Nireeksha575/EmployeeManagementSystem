@@ -1,6 +1,8 @@
 package com.example.EmployeeManagementSystem.Exception;
 
-public class EmployeeNotFound extends RuntimeException{
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+public class EmployeeNotFound extends UsernameNotFoundException {
     public EmployeeNotFound(String message) {
         super(message);
     }

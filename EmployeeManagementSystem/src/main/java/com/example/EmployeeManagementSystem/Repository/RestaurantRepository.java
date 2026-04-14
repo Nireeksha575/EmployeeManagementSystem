@@ -13,7 +13,7 @@ import java.util.List;
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
     /** All active restaurants owned by a vendor. */
-    List<Restaurant> findByVendor_IdAndActiveTrue(Long vendorId);
+    List<Restaurant> findByVendor_EmailAndActiveTrue(String email);
 
     /** All active restaurants (for employees browsing available options). */
     List<Restaurant> findByActiveTrue();
@@ -27,5 +27,5 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     List<Restaurant> findActiveByMealSlot(@Param("mealSlot") MealSlot mealSlot);
 
     /** Check if a restaurant belongs to a vendor (ownership guard). */
-    boolean existsByIdAndVendor_Id(Long restaurantId, Long vendorId);
+    boolean existsByIdAndVendor_Email(Long restaurantId, String email);
 }

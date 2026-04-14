@@ -12,6 +12,7 @@ import com.example.EmployeeManagementSystem.Repository.RestaurantRepository;
 import com.example.EmployeeManagementSystem.Repository.VendorRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,10 +35,10 @@ public class RestaurantService {
      * Create a new restaurant.
      * Only the owning vendor (matched by vendorId in the request) may do this.
      */
-    public RestaurantDTO createRestaurant(RestaurantRequest request) {
-        Vendor vendor = vendorRepo.findById(request.getVendorId())
+    public RestaurantDTO createRestaurant(RestaurantRequest request,Authentication authentication) {
+        Vendor vendor=vendorRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new VendorNotFoundException(
-                        "Vendor with id " + request.getVendorId() + " not found"));
+                        "Vendor with email " + authentication.getName() + " not found"));
 
         Restaurant restaurant = new Restaurant();
         restaurant.setName(request.getName());
@@ -56,9 +57,12 @@ public class RestaurantService {
      * Update restaurant details.
      * Vendor must own this restaurant — otherwise 403.
      */
-    public RestaurantDTO updateRestaurant(Long restaurantId, RestaurantRequest request) {
+    public RestaurantDTO updateRestaurant(Long restaurantId, RestaurantRequest request,Authentication authentication) {
         Restaurant restaurant = findOrThrow(restaurantId);
-        assertOwnership(restaurantId, request.getVendorId());
+        Vendor vendor=vendorRepo.findByEmail(authentication.getName()).orElseThrow(
+                ()->new VendorNotFoundException("Vendor Not found")
+        );
+        assertOwnership(restaurantId, vendor.getEmail());
 
         if (request.getName() != null) restaurant.setName(request.getName());
         if (request.getAddress() != null) restaurant.setAddress(request.getAddress());
@@ -75,9 +79,12 @@ public class RestaurantService {
      * Active subscriptions to this restaurant will no longer receive new deliveries
      * — the Subscription status should be handled separately.
      */
-    public void deactivateRestaurant(Long restaurantId, Long vendorId) {
+    public void deactivateRestaurant(Long restaurantId, Authentication authentication) {
         Restaurant restaurant = findOrThrow(restaurantId);
-        assertOwnership(restaurantId, vendorId);
+        Vendor vendor=vendorRepo.findByEmail(authentication.getName()).orElseThrow(
+                ()->new VendorNotFoundException("Vendor Not found")
+        );
+        assertOwnership(restaurantId, vendor.getEmail());
         restaurant.setActive(false);
         restaurantRepository.save(restaurant);
         log.info("Restaurant deactivated: id={}", restaurantId);
@@ -87,10 +94,10 @@ public class RestaurantService {
      * Get all restaurants owned by a vendor.
      * VENDOR-only endpoint.
      */
-    public List<RestaurantDTO> getRestaurantsByVendor(Long vendorId) {
-        vendorRepo.findById(vendorId)
-                .orElseThrow(() -> new VendorNotFoundException("Vendor " + vendorId + " not found"));
-        return restaurantRepository.findByVendor_IdAndActiveTrue(vendorId)
+    public List<RestaurantDTO> getRestaurantsByVendor(Authentication authentication) {
+        vendorRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new VendorNotFoundException("Vendor " + authentication.getName() + " not found"));
+        return restaurantRepository.findByVendor_EmailAndActiveTrue(authentication.getName())
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
@@ -128,10 +135,10 @@ public class RestaurantService {
      * Throws UnauthorizedAccessException if the restaurant does not belong to the vendor.
      * This is the core access-control guard for all mutating vendor operations.
      */
-    private void assertOwnership(Long restaurantId, Long vendorId) {
-        if (!restaurantRepository.existsByIdAndVendor_Id(restaurantId, vendorId)) {
+    private void assertOwnership(Long restaurantId, String email) {
+        if (!restaurantRepository.existsByIdAndVendor_Email(restaurantId, email)) {
             throw new UnauthorizedAccessException(
-                    "Vendor " + vendorId + " does not own restaurant " + restaurantId);
+                    "Vendor " + email + " does not own restaurant " + restaurantId);
         }
     }
 
