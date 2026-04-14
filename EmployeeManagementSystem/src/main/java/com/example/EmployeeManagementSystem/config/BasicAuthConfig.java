@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,19 +20,20 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableMethodSecurity
 public class BasicAuthConfig {
-    @Bean
-    @Order(2)
-   public SecurityFilterChain basicAuth(HttpSecurity security){
-      security
-               .csrf(csrf-> csrf.disable())
-               .authorizeHttpRequests(
-                       auth->auth
-                               .requestMatchers("/employee/register","/employee/register/manager").permitAll()
-                               .anyRequest().authenticated()
-               )
-               .httpBasic(Customizer.withDefaults());
-       return security.build();
-   }
+//    @Bean
+//    @Order(2)
+//   public SecurityFilterChain basicAuth(HttpSecurity security){
+//      security
+//               .csrf(csrf-> csrf.disable())
+//               .authorizeHttpRequests(
+//                       auth->auth
+//                               .requestMatchers("/employee/register","/employee/register/manager").permitAll()
+//                               .requestMatchers(HttpMethod.POST,"/vendors").permitAll()
+//                               .anyRequest().authenticated()
+//               )
+//               .httpBasic(Customizer.withDefaults());
+//       return security.build();
+//   }
 
    @Bean
     public PasswordEncoder passwordEncoder(){
@@ -39,11 +41,11 @@ public class BasicAuthConfig {
    }
 
    @Bean
-    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService,
+    public AuthenticationManager authenticationManager(@Qualifier("combinedUserDetailService") UserDetailsService userDetailsService,
                                                        PasswordEncoder passwordEncoder){
-       DaoAuthenticationProvider authenticationProvider=new DaoAuthenticationProvider(userDetailsService);
-       authenticationProvider.setPasswordEncoder(passwordEncoder);
-       return new ProviderManager(authenticationProvider);
+       DaoAuthenticationProvider employeeAuthenticationProvider=new DaoAuthenticationProvider(userDetailsService);
+       employeeAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+       return new ProviderManager(employeeAuthenticationProvider);
    }
 
 }

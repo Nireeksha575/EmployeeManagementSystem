@@ -6,6 +6,7 @@ import com.example.EmployeeManagementSystem.Service.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/employee")
@@ -21,6 +22,12 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('MANAGER','EMPLOYEE')")
+    public ResponseEntity<Employee> myAccount(Authentication authentication){
+        return ResponseEntity.ok(employeeService.getAccount(authentication));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<Employee> addEmployee(@RequestBody EmployeeDTO employee){
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -34,6 +41,8 @@ public class EmployeeController {
                 .body(employeeService.createManager(employee));
 
     }
+
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Employee> updateEmployee(@PathVariable long id,@RequestBody EmployeeDTO employeeDTO){

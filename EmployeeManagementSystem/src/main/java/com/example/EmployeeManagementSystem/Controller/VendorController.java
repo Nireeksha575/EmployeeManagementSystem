@@ -5,6 +5,8 @@ import com.example.EmployeeManagementSystem.DTO.VendorRequest;
 import com.example.EmployeeManagementSystem.Service.DeliveryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,24 +41,27 @@ public class VendorController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<List<VendorDTO>> getAllVendors() {
         return ResponseEntity.ok(vendorService.getAllVendors());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<VendorDTO> getVendor(@PathVariable Long id) {
-        return ResponseEntity.ok(vendorService.getVendor(id));
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('VENDOR')")
+    public ResponseEntity<VendorDTO> getVendor(Authentication authentication) {
+        return ResponseEntity.ok(vendorService.getVendor(authentication));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<VendorDTO> updateVendor(@PathVariable Long id,
-                                                  @RequestBody VendorRequest request) {
-        return ResponseEntity.ok(vendorService.updateVendor(id, request));
+    @PutMapping("/update")
+    @PreAuthorize("hasRole('VENDOR')")
+    public ResponseEntity<VendorDTO> updateVendor(@RequestBody VendorRequest request,Authentication authentication) {
+        return ResponseEntity.ok(vendorService.updateVendor(request,authentication));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVendor(@PathVariable Long id) {
-        vendorService.deleteVendor(id);
-        return ResponseEntity.ok("Vendor with id " + id + " has been removed.");
+    @DeleteMapping
+    @PreAuthorize("hasRole('VENDOR')")
+    public ResponseEntity<String> deleteVendor(Authentication authentication) {
+        vendorService.deleteVendor(authentication);
+        return ResponseEntity.ok("Vendor with email " + authentication.getName() + " has been removed.");
     }
 }

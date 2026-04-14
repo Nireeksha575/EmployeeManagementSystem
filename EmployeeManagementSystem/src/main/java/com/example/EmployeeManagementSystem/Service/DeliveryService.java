@@ -14,6 +14,8 @@ import com.example.EmployeeManagementSystem.Repository.VendorRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,9 +92,11 @@ public class DeliveryService {
 
         private static final Logger log = LoggerFactory.getLogger(VendorService.class);
         private final VendorRepo vendorRepo;
+        private final PasswordEncoder passwordEncoder;
 
-        public VendorService(VendorRepo vendorRepo) {
+        public VendorService(VendorRepo vendorRepo, PasswordEncoder passwordEncoder) {
             this.vendorRepo = vendorRepo;
+            this.passwordEncoder = passwordEncoder;
         }
 
         public VendorDTO registerVendor(VendorRequest request) {
@@ -104,13 +108,16 @@ public class DeliveryService {
             vendor.setName(request.getName());
             vendor.setEmail(request.getEmail());
             vendor.setPhone(request.getPhone());
+            vendor.setPassword(passwordEncoder.encode(request.getPassword()));
             Vendor saved = vendorRepo.save(vendor);
             log.info("Vendor registered: {} (id={})", saved.getName(), saved.getId());
             return toDTO(saved);
         }
 
-        public VendorDTO getVendor(Long id) {
-            return toDTO(findOrThrow(id));
+        public VendorDTO getVendor(Authentication authentication) {
+            return toDTO(vendorRepo.findByEmail(authentication.getName()).orElseThrow(
+                    ()->new VendorNotFoundException("Cannot get others accoun")
+            ));
         }
 
         public List<VendorDTO> getAllVendors() {
@@ -119,18 +126,23 @@ public class DeliveryService {
                     .collect(Collectors.toList());
         }
 
-        public VendorDTO updateVendor(Long id, VendorRequest request) {
-            Vendor vendor = findOrThrow(id);
+        public VendorDTO updateVendor(VendorRequest request,Authentication authentication) {
+            Vendor vendor = vendorRepo.findByEmail(authentication.getName()).orElseThrow(
+                    ()->new VendorNotFoundException("Cannot update others account")
+            );
             if (request.getName() != null) vendor.setName(request.getName());
             if (request.getPhone() != null) vendor.setPhone(request.getPhone());
+            if (request.getPassword() != null) vendor.setPassword(passwordEncoder.encode(request.getPassword()));
             // Email update not allowed to avoid breaking restaurant ownership references
             return toDTO(vendorRepo.save(vendor));
         }
 
-        public void deleteVendor(Long id) {
-            Vendor vendor = findOrThrow(id);
+        public void deleteVendor(Authentication authentication) {
+            Vendor vendor = vendorRepo.findByEmail(authentication.getName()).orElseThrow(
+                    ()->new VendorNotFoundException("Cannot delete others account")
+            );
             vendorRepo.delete(vendor);
-            log.info("Vendor deleted: id={}", id);
+            log.info("Vendor deleted: email={}", authentication.getName());
         }
 
         // ── helpers ──────────────────────────────────────────────────────────────

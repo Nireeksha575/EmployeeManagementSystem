@@ -29,8 +29,6 @@ public class RestaurantRequest {
      * The vendor ID of the owner making this request.
      * Used to verify ownership on updates/deletes.
      */
-    @NotNull
-    private Long vendorId;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -45,7 +43,4 @@ public class RestaurantRequest {
     public void setSupportedMealSlots(Set<MealSlot> supportedMealSlots) {
         this.supportedMealSlots = supportedMealSlots;
     }
-
-    public Long getVendorId() { return vendorId; }
-    public void setVendorId(Long vendorId) { this.vendorId = vendorId; }
 }

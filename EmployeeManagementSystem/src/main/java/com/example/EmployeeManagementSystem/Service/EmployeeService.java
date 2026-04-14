@@ -8,9 +8,11 @@ import com.example.EmployeeManagementSystem.Enum.Status;
 import com.example.EmployeeManagementSystem.Exception.EmployeeNotFound;
 import com.example.EmployeeManagementSystem.Repository.EmployeeRepo;
 import com.example.EmployeeManagementSystem.Repository.LeaveRequestRepo;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -120,5 +122,13 @@ public class EmployeeService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Employee getAccount(Authentication authentication) {
+        Employee employee=employeeRepo.findByName(authentication.getName()).orElseThrow(
+                ()-> new EmployeeNotFound("Employee :"+authentication.getName()+" NOT FOUND")
+
+        );
+        return employee;
     }
 }
