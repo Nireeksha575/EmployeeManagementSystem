@@ -1,6 +1,7 @@
 package com.example.EmployeeManagementSystem.Service;
 
 import com.example.EmployeeManagementSystem.DTO.ActionDTO;
+import com.example.EmployeeManagementSystem.DTO.AuthRequest;
 import com.example.EmployeeManagementSystem.DTO.LeaveRequestDTO;
 import com.example.EmployeeManagementSystem.DTO.LeaveResponseDTO;
 import com.example.EmployeeManagementSystem.Entity.Employee;
@@ -47,12 +48,12 @@ public class LeaveRequestService {
     }
 
 
-    public ResponseEntity<?> createRequest(long id,LeaveRequestDTO requestDTO){
+    public ResponseEntity<?> createRequest(Authentication authentication, LeaveRequestDTO requestDTO){
         var leaveRequest=new LeaveRequest();
 
         //Validate employee exists and is active
-        var employee=employeeRepo.findById(id).orElseThrow(()->
-                new EmployeeNotFound("Employee with id: "+id+" is not found")
+        var employee=employeeRepo.findByName(authentication.getName()).orElseThrow(()->
+                new EmployeeNotFound("Employee with name: "+authentication.getName()+" is not found")
         );
         if (employee.getStatus() != Status.ACTIVE) {
             return ResponseEntity.badRequest()
@@ -90,7 +91,7 @@ public class LeaveRequestService {
             }
         }
         long duplicateCount= leaveRequestRepo.checkDuplicate(
-                id,
+                employee.getEmployeeId(),
                 requestDTO.getStartDate(),
                 requestDTO.getEndDate(),
                 LeaveStatus.PENDING.name()
@@ -101,7 +102,7 @@ public class LeaveRequestService {
 
         //checking if there is any overlapping leave request of that employee
         long count= leaveRequestRepo.countOverlappingLeave(
-                id,
+                employee.getEmployeeId(),
                 requestDTO.getStartDate(),
                 requestDTO.getEndDate()
         );
@@ -133,8 +134,10 @@ public class LeaveRequestService {
         return responseDTOS;
     }
 
-    public ResponseEntity<?> updateLeaveRequestStatus(ActionDTO actionDTO){
-
+    public ResponseEntity<?> updateLeaveRequestStatus(ActionDTO actionDTO,Authentication authentication){
+        Employee manager=employeeRepo.findByName(authentication.getName()).orElseThrow(
+                ()->new EmployeeNotFound("Manager with name: "+authentication.getName()+" Not Found")
+        );
         if (actionDTO.getAction() == null) {
             return ResponseEntity.badRequest().body("Action is required");
         }
@@ -159,7 +162,7 @@ public class LeaveRequestService {
          else{
              return ResponseEntity.badRequest().body("Invalid action,Use APPROVED or REJECTED");
          }
-
+         leaveRequest.setManager(manager.getName());
          if(actionDTO.getRemarks()!=null){
              leaveRequest.setRemarks(actionDTO.getRemarks());
          }

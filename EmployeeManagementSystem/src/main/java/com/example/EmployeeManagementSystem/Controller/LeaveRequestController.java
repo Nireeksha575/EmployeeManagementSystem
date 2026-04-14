@@ -26,10 +26,10 @@ public class LeaveRequestController {
         return ResponseEntity.ok(leaveRequestService.getAllTheLeaveRequest());
     }
 
-    @PostMapping("/{EmployeeId}")
+    @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER','EMPLOYEE')")
-    public ResponseEntity<?> addLeaveRequest(@PathVariable long EmployeeId,@RequestBody LeaveRequestDTO dto){
-        return leaveRequestService.createRequest(EmployeeId,dto);
+    public ResponseEntity<?> addLeaveRequest(Authentication authentication,@RequestBody LeaveRequestDTO dto){
+        return leaveRequestService.createRequest(authentication,dto);
     }
 
     @GetMapping("/pending")
@@ -40,8 +40,8 @@ public class LeaveRequestController {
 
     @PutMapping("/approval")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> updateLeaveRequestStatus(@RequestBody ActionDTO actionDTO){
-      return leaveRequestService.updateLeaveRequestStatus(actionDTO);
+    public ResponseEntity<?> updateLeaveRequestStatus(@RequestBody ActionDTO actionDTO,Authentication authentication){
+      return leaveRequestService.updateLeaveRequestStatus(actionDTO,authentication);
     }
 
     @PutMapping("/cancel/{leaveId}")
