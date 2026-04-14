@@ -30,5 +30,11 @@ spring:
         same-site: strict
         secure: false     # set true in production with HTTPS
 
-
-jwt.secret: ${JWT_SECRET}
+  security:
+    debug: true
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.example.EmployeeManagementSystem: DEBUG
+jwt:
+  secret: ${JWT_SECRET}
