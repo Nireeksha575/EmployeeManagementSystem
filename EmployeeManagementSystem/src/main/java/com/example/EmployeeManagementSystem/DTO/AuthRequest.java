@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AuthRequest {
     @JsonProperty("username")
     private String Username;
+    @JsonProperty("password")
     private String Password;
 
     public String getPassword() {

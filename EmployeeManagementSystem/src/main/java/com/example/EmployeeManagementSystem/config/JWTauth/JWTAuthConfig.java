@@ -15,21 +15,36 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableMethodSecurity
 public class JWTAuthConfig {
+
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
+
     @Bean
     @Order(3)
-    public SecurityFilterChain jwtAuth(HttpSecurity security) throws Exception{
+    public SecurityFilterChain jwtAuth(HttpSecurity security) throws Exception {
         security
-                .csrf(csrf-> csrf.disable())
-                .authorizeHttpRequests(
-                        auth->auth
-                                .requestMatchers("/employee/register","/employee/register/manager").permitAll()
-                                .requestMatchers(HttpMethod.POST,"/vendors").permitAll()
-                                .requestMatchers(HttpMethod.POST,"/Authenticate").permitAll()
-                                .anyRequest().authenticated()
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // Permit Swagger UI and API documentation
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
+                        // Permit authentication endpoints
+                        .requestMatchers("/auth/login", "/Authenticate").permitAll()
+                        .requestMatchers("/session/login", "/session/logout", "/session/me").permitAll()
+                        // Permit registration endpoints
+                        .requestMatchers("/employee/register", "/employee/register/manager").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/vendors").permitAll()
+                        // All other requests need authentication
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return security.build();
     }
 }
