@@ -33,7 +33,8 @@ public class JWTAuthConfig {
                                 "/v3/api-docs",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/leavemanagement.html"
+                                "/leavemanagement.html",
+                                "/oauth2/authorization/google"
                         ).permitAll()
                         // Permit authentication endpoints
                         .requestMatchers("/auth/login", "/Authenticate").permitAll()
