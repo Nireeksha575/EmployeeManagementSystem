@@ -21,7 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class BasicAuthConfig {
 //    @Bean
-//    @Order(2)
+//    @Order(3)
 //   public SecurityFilterChain basicAuth(HttpSecurity security){
 //      security
 //               .csrf(csrf-> csrf.disable())
