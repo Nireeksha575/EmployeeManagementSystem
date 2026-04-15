@@ -14,12 +14,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableMethodSecurity
-@EnableWebSecurity
 public class JWTAuthConfig {
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
     @Bean
-    @Order(2)
+    @Order(3)
     public SecurityFilterChain jwtAuth(HttpSecurity security) throws Exception{
         security
                 .csrf(csrf-> csrf.disable())
