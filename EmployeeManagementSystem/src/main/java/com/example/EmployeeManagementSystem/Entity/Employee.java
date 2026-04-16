@@ -128,7 +128,7 @@ public class Employee implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.name;
+        return email;
     }
 
     @Override

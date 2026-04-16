@@ -53,7 +53,7 @@ public class SubscriptionService {
      * - No duplicate active subscription for the same employee + slot combination
      */
     public void addSubscription(SubscriptionRequest request,Authentication authentication) {
-        Employee employee = employeeRepo.findByName(authentication.getName())
+        Employee employee = employeeRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new EmployeeNotFound(
                         "Employee with id " + authentication.getName() + " not found"));
 
@@ -190,7 +190,7 @@ public class SubscriptionService {
     }
 
     public List<SubscriptionDTO> getSubscriptionOfUser(Authentication authentication) {
-        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_name(authentication.getName());
+        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_Email(authentication.getName());
         List<SubscriptionDTO> dtoList = new ArrayList<>();
         for (Subscription s : subscriptions) {
             dtoList.add(convertToDTO(s));

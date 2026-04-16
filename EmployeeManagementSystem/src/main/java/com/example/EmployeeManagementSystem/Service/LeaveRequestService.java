@@ -52,7 +52,7 @@ public class LeaveRequestService {
         var leaveRequest=new LeaveRequest();
 
         //Validate employee exists and is active
-        var employee=employeeRepo.findByName(authentication.getName()).orElseThrow(()->
+        var employee=employeeRepo.findByEmail(authentication.getName()).orElseThrow(()->
                 new EmployeeNotFound("Employee with name: "+authentication.getName()+" is not found")
         );
         if (employee.getStatus() != Status.ACTIVE) {
@@ -135,7 +135,7 @@ public class LeaveRequestService {
     }
 
     public ResponseEntity<?> updateLeaveRequestStatus(ActionDTO actionDTO,Authentication authentication){
-        Employee manager=employeeRepo.findByName(authentication.getName()).orElseThrow(
+        Employee manager=employeeRepo.findByEmail(authentication.getName()).orElseThrow(
                 ()->new EmployeeNotFound("Manager with name: "+authentication.getName()+" Not Found")
         );
         if (actionDTO.getAction() == null) {
@@ -207,7 +207,7 @@ public class LeaveRequestService {
     public ResponseEntity<?> getLeaveRequestsByEmployee(Authentication authentication) {
         log.info("Fetching leave requests for employee: {}", authentication.getName());
 
-        Employee employee = employeeRepo.findByName(authentication.getName())
+        Employee employee = employeeRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new EmployeeNotFound("Employee not found: " +authentication.getName() ));
 
         List<LeaveRequest> requests = leaveRequestRepo.findByEmployeeOrderByStartDateDesc(employee);

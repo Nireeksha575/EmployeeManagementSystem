@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Management — Sign In</title>
+
+  ```
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e4e0;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    .google-btn {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .status.loading { background: #eee; display: block; }
+    .status.success { background: #d4edda; display: block; }
+    .status.error { background: #f8d7da; display: block; }
+
+    .token-box {
+      margin-top: 1rem;
+      padding: 10px;
+      background: #f1f1f1;
+      display: none;
+    }
+
+    .token-value {
+      font-size: 12px;
+      word-break: break-all;
+    }
+  </style>
+  ```
+
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Welcome back</h1>
+  <p class="sub">Sign in with Google</p>
+
+  ```
+  <button class="google-btn" onclick="handleGoogleLogin()">
+    Continue with Google
+  </button>
+
+  <div id="status" class="status"></div>
+
+  <div id="token-box" class="token-box">
+    <div class="token-value" id="token-value"></div>
+  </div>
+  ```
+
+</div>
+
+<script>
+  const BACKEND_URL = 'http://localhost:8080';
+  const GOOGLE_CLIENT_ID = '525324511556-irdjng85bb221n5k20kcq6a8a3r50mnp.apps.googleusercontent.com';
+
+  // 🔥 Redirect back to SAME page
+  const REDIRECT_URI = 'http://localhost:8080/oauth.html';
+
+  function handleGoogleLogin() {
+      const scope = [
+          'https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/userinfo.profile'
+      ].join(' ');
+
+      const authUrl =
+          `https://accounts.google.com/o/oauth2/v2/auth` +
+          `?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+          `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+          `&response_type=code` +
+          `&scope=${encodeURIComponent(scope)}`;
+
+      // 🔥 Redirect instead of popup
+      window.location.href = authUrl;
+  }
+
+  async function exchangeCode(code) {
+      showStatus('loading', 'Signing you in...');
+
+      try {
+          const res = await fetch(
+              `${BACKEND_URL}/auth/google/callback?code=${encodeURIComponent(code)}`
+          );
+
+          const data = await res.json();
+
+          if (res.ok && data.token) {
+              localStorage.setItem('jwt_token', data.token);
+              showStatus('success', 'Login successful!');
+              showToken(data.token);
+          } else {
+              showStatus('error', 'Login failed');
+          }
+      } catch (err) {
+          showStatus('error', 'Server error');
+      }
+  }
+
+  // 🔥 Handle redirect with code
+  window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (code) {
+          exchangeCode(code);
+
+          // remove ?code from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+      }
+  };
+
+  function showStatus(type, msg) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + type;
+      el.innerText = msg;
+  }
+
+  function showToken(token) {
+      const box = document.getElementById('token-box');
+      const val = document.getElementById('token-value');
+
+      box.style.display = 'block';
+      val.innerText = token;
+  }
+</script>
+
+</body>
+</html>
