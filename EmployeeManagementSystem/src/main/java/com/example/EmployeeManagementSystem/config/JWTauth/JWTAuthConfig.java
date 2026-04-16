@@ -9,8 +9,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 @Configuration
 @EnableMethodSecurity
@@ -23,7 +25,15 @@ public class JWTAuthConfig {
     @Order(3)
     public SecurityFilterChain jwtAuth(HttpSecurity security) throws Exception {
         security
+                .securityContext(securityContext -> securityContext
+                        .requireExplicitSave(false)  // Auto-save context for session auth
+                        .securityContextRepository(new HttpSessionSecurityContextRepository())
+                )
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Allow sessions for session auth
+
+                )
                 .authorizeHttpRequests(auth -> auth
                         // Permit Swagger UI and API documentation
                         .requestMatchers(
@@ -33,8 +43,10 @@ public class JWTAuthConfig {
                                 "/v3/api-docs",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/leavemanagement.html",
-                                "/oauth2/authorization/google"
+                                "/oauth2/authorization/google",
+                                "/login.html",
+                                "/dashboard.html",
+                                "/LeaveManagement.html"  // Add your HTML files
                         ).permitAll()
                         // Permit authentication endpoints
                         .requestMatchers("/auth/login", "/Authenticate").permitAll()
