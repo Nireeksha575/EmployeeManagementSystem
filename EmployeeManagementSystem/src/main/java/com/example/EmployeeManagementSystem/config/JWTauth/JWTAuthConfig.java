@@ -53,6 +53,7 @@ public class JWTAuthConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/google.html").permitAll()
+                        .requestMatchers("/login.html","/dashboard.html").permitAll()
                         .requestMatchers("/auth/google/callback").permitAll()
                         .requestMatchers("/api-keys/generate").authenticated()  // Requires auth
                         .anyRequest().authenticated()

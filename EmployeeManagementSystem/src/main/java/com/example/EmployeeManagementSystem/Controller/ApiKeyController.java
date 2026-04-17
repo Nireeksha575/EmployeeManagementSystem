@@ -50,7 +50,7 @@ public class ApiKeyController {
         apiKey.setPermissions(permissions);
         
         // Find the user
-        Employee employee = employeeRepo.findByName(authentication.getName()).orElse(null);
+        Employee employee = employeeRepo.findByEmail(authentication.getName()).orElse(null);
         if (employee != null) {
             apiKey.setEmployee(employee);
         } else {
@@ -75,7 +75,7 @@ public class ApiKeyController {
     @GetMapping
     @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER', 'VENDOR')")
     public ResponseEntity<List<ApiKey>> getMyApiKeys(Authentication authentication) {
-        Employee employee = employeeRepo.findByName(authentication.getName()).orElse(null);
+        Employee employee = employeeRepo.findByEmail(authentication.getName()).orElse(null);
         if (employee != null) {
             // FIX: Use corrected method name
             return ResponseEntity.ok(apiKeyRepository.findByEmployee_EmployeeIdAndActiveTrue(employee.getEmployeeId()));
