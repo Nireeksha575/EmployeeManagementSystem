@@ -9,8 +9,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,6 +20,7 @@ import java.util.Map;
 public class SessionAuthController {
 
     private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     public SessionAuthController(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
@@ -37,28 +38,27 @@ public class SessionAuthController {
                     new UsernamePasswordAuthenticationToken(username, password)
             );
 
-            SecurityContextHolderStrategy strategy =
-                    SecurityContextHolder.getContextHolderStrategy();
-            SecurityContext context = strategy.createEmptyContext();
+            // Create and set security context
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(auth);
-            strategy.setContext(context);
+            SecurityContextHolder.setContext(context);
 
-            // Store in HTTP session
+            // CRITICAL: Save the context to the HTTP session
             HttpSession session = request.getSession(true);
-            session.setAttribute(
-                    HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                    context
-            );
+            securityContextRepository.saveContext(context, request, response);
+
+            // Alternative: Manual session attribute (redundant but safe)
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Login successful",
                     "username", auth.getName(),
                     "sessionId", session.getId(),
-                    "roles", auth.getAuthorities()
+                    "roles", auth.getAuthorities().toString()
             ));
 
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+            return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials: " + e.getMessage()));
         }
     }
 
@@ -79,7 +79,8 @@ public class SessionAuthController {
         }
         return ResponseEntity.ok(Map.of(
                 "username", authentication.getName(),
-                "roles", authentication.getAuthorities()
+                "roles", authentication.getAuthorities().toString(),
+                "authenticated", true
         ));
     }
 }

@@ -10,23 +10,23 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 @Configuration
 public class SessionAuthConfig {
 
-//    @Bean
-//    @Order(1)
-//    public SecurityFilterChain sessionFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .securityMatcher("/session/**", "/web/**")
-//                .csrf(csrf -> csrf.disable())
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/session/login", "/session/logout").permitAll()
-//                        .anyRequest().authenticated()
-//                )
-//                .sessionManagement(session -> session
-//                        .maximumSessions(1)           // one session per user
-//                        .maxSessionsPreventsLogin(false) // new login kicks old session
-//                )
-//                .securityContext(ctx -> ctx
-//                        .securityContextRepository(new HttpSessionSecurityContextRepository())
-//                );
-//        return http.build();
-//    }
+    @Bean
+    @Order(1)
+    public SecurityFilterChain sessionFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/session/**", "/web/**")
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/session/login", "/session/logout").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session
+                        .maximumSessions(1)           // one session per user
+                        .maxSessionsPreventsLogin(false) // new login kicks old session
+                )
+                .securityContext(ctx -> ctx
+                        .securityContextRepository(new HttpSessionSecurityContextRepository())
+                );
+        return http.build();
+    }
 }

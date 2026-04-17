@@ -125,7 +125,7 @@ public class EmployeeService {
     }
 
     public Employee getAccount(Authentication authentication) {
-        Employee employee=employeeRepo.findByEmail(authentication.getName()).orElseThrow(
+        Employee employee=employeeRepo.findByName(authentication.getName()).orElseThrow(
                 ()-> new EmployeeNotFound("Employee :"+authentication.getName()+" NOT FOUND")
 
         );

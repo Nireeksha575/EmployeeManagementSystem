@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS Login - Employee Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #0d0f14 0%, #131720 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: #1a2030;
+            border-radius: 16px;
+            padding: 40px;
+            width: 440px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { text-align: center; margin-bottom: 32px; }
+        .logo h1 { color: #e0e0e0; font-size: 28px; }
+        .logo span { color: #4f8cff; }
+        .logo p { color: #8b92a8; font-size: 13px; margin-top: 8px; }
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            background: #0d0f14; padding: 4px; border-radius: 12px;
+        }
+        .tab-btn {
+            flex: 1; padding: 10px; background: transparent; border: none;
+            color: #8b92a8; font-family: 'DM Sans', sans-serif; font-weight: 600;
+            font-size: 14px; cursor: pointer; border-radius: 8px; transition: all 0.2s;
+        }
+        .tab-btn.active { background: #4f8cff; color: white; }
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block; color: #8b92a8; font-size: 12px; font-weight: 600;
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        input {
+            width: 100%; padding: 12px 14px; background: #0d0f14;
+            border: 1px solid #2a2f3f; border-radius: 8px; color: white;
+            font-family: 'DM Sans', sans-serif; font-size: 14px; transition: all 0.2s;
+        }
+        input:focus { outline: none; border-color: #4f8cff; box-shadow: 0 0 0 3px rgba(79,140,255,0.1); }
+        .login-btn {
+            width: 100%; padding: 12px; background: #4f8cff; border: none;
+            border-radius: 8px; color: white; font-family: 'DM Sans', sans-serif;
+            font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 8px; transition: all 0.2s;
+        }
+        .login-btn:hover { background: #6ba0ff; transform: translateY(-1px); }
+        .oauth-btn {
+            width: 100%; padding: 12px; background: transparent;
+            border: 1px solid rgba(79,140,255,0.3); border-radius: 8px; color: #4f8cff;
+            font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 14px;
+            cursor: pointer; margin-top: 12px; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .oauth-btn:hover { background: rgba(79,140,255,0.1); border-color: #4f8cff; }
+        .divider {
+            display: flex; align-items: center; text-align: center;
+            margin: 20px 0; color: #8b92a8; font-size: 12px;
+        }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #2a2f3f; }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+        .error-msg {
+            background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
+            border-radius: 8px; padding: 10px; margin-top: 16px; color: #f87171;
+            font-size: 13px; text-align: center; display: none;
+        }
+        .info-text { text-align: center; margin-top: 20px; color: #8b92a8; font-size: 12px; }
+        .demo-credentials {
+            background: rgba(79,140,255,0.1); border-radius: 8px; padding: 12px;
+            margin-top: 16px; font-size: 11px; color: #8b92a8;
+        }
+        .demo-credentials code { color: #4f8cff; font-family: monospace; }
+        .timezone-selector { margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2f3f; }
+        .timezone-selector select {
+            width: 100%; padding: 10px; background: #0d0f14; border: 1px solid #2a2f3f;
+            border-radius: 8px; color: white; font-family: 'DM Sans', sans-serif;
+            font-size: 13px; cursor: pointer;
+        }
+        .timezone-label { font-size: 11px; color: #8b92a8; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .timezone-label span { color: #36d399; }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="logo">
+        <h1>E<span>M</span>S</h1>
+        <p>Employee Management System</p>
+    </div>
+
+    <!-- Timezone Display -->
+    <div class="timezone-selector">
+        <div class="timezone-label">
+            TIMEZONE <span id="current-timezone-display">Loading...</span>
+        </div>
+        <select id="timezone-select" onchange="updateTimezone()">
+            <option value="Asia/Kolkata">India (IST) UTC+5:30</option>
+            <option value="UTC">UTC</option>
+            <option value="America/New_York">New York (EST) UTC-5</option>
+            <option value="America/Los_Angeles">Los Angeles (PST) UTC-8</option>
+            <option value="Europe/London">London (GMT) UTC+0</option>
+            <option value="Europe/Paris">Paris (CET) UTC+1</option>
+            <option value="Asia/Tokyo">Tokyo (JST) UTC+9</option>
+            <option value="Asia/Dubai">Dubai (GST) UTC+4</option>
+            <option value="Australia/Sydney">Sydney (AEDT) UTC+11</option>
+            <option value="Asia/Singapore">Singapore (SGT) UTC+8</option>
+            <option value="America/Sao_Paulo">Sao Paulo (BRT) UTC-3</option>
+        </select>
+    </div>
+
+    <div class="tabs" style="margin-top: 20px;">
+        <button class="tab-btn active" onclick="switchTab('jwt')">JWT Login</button>
+        <button class="tab-btn" onclick="switchTab('session')">Session Login</button>
+    </div>
+
+    <!-- JWT Login Form -->
+    <div id="jwt-form">
+        <div class="form-group">
+            <label>Username / Email</label>
+            <input type="text" id="jwt-username" placeholder="Enter your username" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="jwt-password" placeholder="Enter your password">
+        </div>
+        <button class="login-btn" onclick="jwtLogin()">Login with JWT</button>
+    </div>
+
+    <!-- Session Login Form -->
+    <div id="session-form" style="display: none;">
+        <div class="form-group">
+            <label>Username / Email</label>
+            <input type="text" id="session-username" placeholder="Enter your username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="session-password" placeholder="Enter your password">
+        </div>
+        <button class="login-btn" onclick="sessionLogin()">Login with Session</button>
+    </div>
+
+    <!-- OAuth Separator -->
+    <div class="divider">OR</div>
+
+    <!-- Google OAuth Button -->
+    <button class="oauth-btn" onclick="googleLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4f8cff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#4f8cff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#4f8cff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#4f8cff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+    </button>
+
+    <div id="error-msg" class="error-msg"></div>
+
+    <div class="demo-credentials">
+        <strong style="color:#8e8ef0;">Demo Credentials:</strong><br>
+        Employee: <code>john.doe</code> / <code>password123</code><br>
+        Manager: <code>jane.manager</code> / <code>manager123</code><br>
+        Vendor: <code>vendor@email.com</code> / <code>vendor123</code>
+    </div>
+    <div class="info-text">
+        JWT tokens are stored locally | Session uses browser cookies (24h session)
+    </div>
+</div>
+
+<script>
+    const API = "http://localhost:8080";
+
+    // ---- Timezone ----
+    function updateTimezone() {
+        const tz = document.getElementById('timezone-select').value;
+        localStorage.setItem('user_timezone', tz);
+        const now = new Date();
+        const displayTz = now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false });
+        document.getElementById('current-timezone-display').textContent =
+            tz.split('/').pop() + ' ' + displayTz;
+    }
+
+    function loadTimezone() {
+        const savedTz = localStorage.getItem('user_timezone') || 'Asia/Kolkata';
+        const select = document.getElementById('timezone-select');
+        if (select) {
+            select.value = savedTz;
+            updateTimezone();
+        }
+        setInterval(updateTimezone, 1000);
+    }
+
+    // ---- Tab switching ----
+    function switchTab(type) {
+        document.getElementById('jwt-form').style.display = type === 'jwt' ? 'block' : 'none';
+        document.getElementById('session-form').style.display = type === 'session' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if (type === 'jwt') {
+            document.querySelector('.tab-btn:first-child').classList.add('active');
+        } else {
+            document.querySelector('.tab-btn:last-child').classList.add('active');
+        }
+        document.getElementById('error-msg').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorDiv = document.getElementById('error-msg');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+    }
+
+    // ---- JWT Login ----
+    async function jwtLogin() {
+        const username = document.getElementById('jwt-username').value.trim();
+        const password = document.getElementById('jwt-password').value;
+        if (!username || !password) {
+            showError('Please enter username and password');
+            return;
+        }
+        try {
+            const response = await fetch(`${API}/Authenticate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (response.ok) {
+                const token = await response.text();
+                localStorage.setItem('jwt_token', token);
+                localStorage.setItem('username', username);
+                // FIX 4a: Store auth_type so dashboard knows which auth method was used
+                localStorage.setItem('auth_type', 'jwt');
+                localStorage.setItem('user_timezone', document.getElementById('timezone-select').value);
+                window.location.href = '/dashboard.html';
+            } else {
+                const error = await response.text();
+                showError('Login failed: ' + (error || 'Invalid credentials'));
+            }
+        } catch (e) {
+            showError('Connection error: ' + e.message);
+        }
+    }
+
+    // ---- Session Login ----
+    async function sessionLogin() {
+        const username = document.getElementById('session-username').value.trim();
+        const password = document.getElementById('session-password').value;
+        if (!username || !password) {
+            showError('Please enter username and password');
+            return;
+        }
+        try {
+            const response = await fetch(`${API}/session/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('username', username);
+                // FIX 4b: Store auth_type as 'session' so dashboard uses cookie auth, not JWT
+                localStorage.setItem('auth_type', 'session');
+                localStorage.setItem('user_timezone', document.getElementById('timezone-select').value);
+                console.log('Session login successful:', data);
+                window.location.href = '/dashboard.html';
+            } else {
+                const error = await response.json();
+                showError('Login failed: ' + (error.error || 'Invalid credentials'));
+            }
+        } catch (e) {
+            showError('Connection error: ' + e.message);
+        }
+    }
+
+    // ---- Google OAuth ----
+    function googleLogin() {
+        localStorage.setItem('user_timezone', document.getElementById('timezone-select').value);
+        window.location.href = `${API}/oauth2/authorization/google`;
+    }
+
+    // FIX 5: Check BOTH jwt_token and auth_type='session' to detect already-logged-in users.
+    // Previously only checked jwt_token, so session-logged-in users were never redirected.
+    if (localStorage.getItem('jwt_token') || localStorage.getItem('auth_type') === 'session') {
+        window.location.href = '/dashboard.html';
+    }
+
+    loadTimezone();
+</script>
+</body>
+</html>

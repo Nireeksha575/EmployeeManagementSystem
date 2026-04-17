@@ -35,6 +35,17 @@ public class BasicAuthConfig {
 //       return security.build();
 //   }
 
+   @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+   }
 
+   @Bean
+    public AuthenticationManager authenticationManager(@Qualifier("combinedUserDetailService") UserDetailsService userDetailsService,
+                                                       PasswordEncoder passwordEncoder){
+       DaoAuthenticationProvider employeeAuthenticationProvider=new DaoAuthenticationProvider(userDetailsService);
+       employeeAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+       return new ProviderManager(employeeAuthenticationProvider);
+   }
 
 }
