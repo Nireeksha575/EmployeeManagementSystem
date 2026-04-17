@@ -66,4 +66,8 @@ logging:
     com.example.EmployeeManagementSystem: DEBUG
 jwt:
   secret: ${JWT_SECRET}
-
+# Add this to your application.yaml
+api:
+  key:
+    enabled: true
+    header-name: X-API-Key

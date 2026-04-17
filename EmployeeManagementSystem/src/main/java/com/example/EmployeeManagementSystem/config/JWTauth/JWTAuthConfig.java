@@ -1,64 +1,58 @@
-package com.example.EmployeeManagementSystem.config.JWTauth;
+// src/main/java/com/example/EmployeeManagementSystem/config/JWTAuth/JWTAuthConfig.java
+package com.example.EmployeeManagementSystem.config.JWTAuth;
 
+import com.example.EmployeeManagementSystem.Filter.ApiKeyFilter;
 import com.example.EmployeeManagementSystem.Filter.JwtAuthFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.EmployeeManagementSystem.security.ApiKeyAuthenticationProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+
+import java.util.List;
 
 @Configuration
-@EnableMethodSecurity
+@EnableWebSecurity
 public class JWTAuthConfig {
 
-    @Autowired
-    private JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthFilter jwtAuthFilter;
+    private final ApiKeyAuthenticationProvider apiKeyAuthProvider;
+
+    public JWTAuthConfig(JwtAuthFilter jwtAuthFilter,
+                         ApiKeyAuthenticationProvider apiKeyAuthProvider) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.apiKeyAuthProvider = apiKeyAuthProvider;
+    }
 
     @Bean
-    @Order(3)
-    public SecurityFilterChain jwtAuth(HttpSecurity security) throws Exception {
-        security
-                .securityContext(securityContext -> securityContext
-                        .requireExplicitSave(false)  // Auto-save context for session auth
-                        .securityContextRepository(new HttpSessionSecurityContextRepository())
-                )
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Allow sessions for session auth
+    public ApiKeyFilter apiKeyFilter() {
+        return new ApiKeyFilter();
+    }
 
-                )
+    // DON'T create a new authenticationManager bean - use existing or rename
+    // Instead, just add the provider to existing auth manager
+    // Remove or comment out this bean if BasicAuthConfig already provides it
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Permit Swagger UI and API documentation
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/oauth2/authorization/google",
-                                "/login.html",
-                                "/dashboard.html",
-                                "/LeaveManagement.html"  // Add your HTML files
-                        ).permitAll()
-                        // Permit authentication endpoints
-                        .requestMatchers("/auth/login", "/Authenticate").permitAll()
-                        .requestMatchers("/session/login", "/session/logout", "/session/me").permitAll()
-                        // Permit registration endpoints
-                        .requestMatchers("/employee/register", "/employee/register/manager").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/vendors").permitAll()
-                        // All other requests need authentication
+                        .requestMatchers("/Authenticate", "/session/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api-keys/generate").authenticated()  // Requires auth
                         .anyRequest().authenticated()
                 )
+                // Add API Key filter BEFORE JWT filter
+                .addFilterBefore(apiKeyFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return security.build();
+        return http.build();
     }
 }
