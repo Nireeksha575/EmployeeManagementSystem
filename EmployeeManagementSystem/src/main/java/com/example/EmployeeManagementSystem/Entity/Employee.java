@@ -23,7 +23,7 @@ public class Employee implements UserDetails {
     private String name;
     @Column(unique = true, nullable = false)
     private String email;
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String dept;
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -128,7 +128,7 @@ public class Employee implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.name;
+        return email;
     }
 
     @Override

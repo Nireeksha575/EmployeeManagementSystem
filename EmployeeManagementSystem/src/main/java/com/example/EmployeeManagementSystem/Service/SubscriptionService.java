@@ -190,7 +190,7 @@ public class SubscriptionService {
     }
 
     public List<SubscriptionDTO> getSubscriptionOfUser(Authentication authentication) {
-        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_name(authentication.getName());
+        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_Email(authentication.getName());
         List<SubscriptionDTO> dtoList = new ArrayList<>();
         for (Subscription s : subscriptions) {
             dtoList.add(convertToDTO(s));

@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -27,6 +28,11 @@ public class JWTAuthConfig {
                          ApiKeyAuthenticationProvider apiKeyAuthProvider) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.apiKeyAuthProvider = apiKeyAuthProvider;
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate(){
+        return new RestTemplate();
     }
 
     @Bean
@@ -46,6 +52,8 @@ public class JWTAuthConfig {
                         .requestMatchers("/Authenticate", "/session/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/google.html").permitAll()
+                        .requestMatchers("/auth/google/callback").permitAll()
                         .requestMatchers("/api-keys/generate").authenticated()  // Requires auth
                         .anyRequest().authenticated()
                 )

@@ -24,7 +24,7 @@ public class CombinedUserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<Employee> employee = employeeRepository.findByName(username);
+        Optional<Employee> employee = employeeRepository.findByEmail(username);
         if (employee.isPresent()) {
             return employee.get(); // must implement UserDetails
         }
