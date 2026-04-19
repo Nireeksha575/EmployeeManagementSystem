@@ -1,5 +1,5 @@
 // src/main/java/com/example/EmployeeManagementSystem/config/JWTAuth/JWTAuthConfig.java
-package com.example.EmployeeManagementSystem.config.JWTAuth;
+package com.example.EmployeeManagementSystem.config.JWTauth;
 
 import com.example.EmployeeManagementSystem.Filter.ApiKeyFilter;
 import com.example.EmployeeManagementSystem.Filter.JwtAuthFilter;
