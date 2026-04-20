@@ -49,7 +49,7 @@ public class JWTAuthConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/Authenticate", "/session/**").permitAll()
+                        .requestMatchers("/Authenticate","/Authenticate/refresh","/session/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/google.html").permitAll()
