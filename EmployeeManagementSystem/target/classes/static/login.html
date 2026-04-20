@@ -227,26 +227,26 @@
             return;
         }
         try {
-            const response = await fetch(`${API}/Authenticate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            if (response.ok) {
-                const token = await response.text();
-                localStorage.setItem('jwt_token', token);
-                localStorage.setItem('username', username);
-                // FIX 4a: Store auth_type so dashboard knows which auth method was used
-                localStorage.setItem('auth_type', 'jwt');
-                localStorage.setItem('user_timezone', document.getElementById('timezone-select').value);
-                window.location.href = '/dashboard.html';
-            } else {
-                const error = await response.text();
-                showError('Login failed: ' + (error || 'Invalid credentials'));
-            }
-        } catch (e) {
-            showError('Connection error: ' + e.message);
+        const response = await fetch(`${API}/Authenticate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        if (response.ok) {
+            const data = await response.json(); // ← parse as JSON, not text
+            localStorage.setItem('jwt_token', data.accessToken);      // ← extract accessToken
+            localStorage.setItem('refresh_token', data.refreshToken); // ← store refresh too
+            localStorage.setItem('username', username);
+            localStorage.setItem('auth_type', 'jwt');
+            localStorage.setItem('user_timezone', document.getElementById('timezone-select').value);
+            window.location.href = '/dashboard.html';
+        } else {
+            const error = await response.text();
+            showError('Login failed: ' + (error || 'Invalid credentials'));
         }
+    } catch (e) {
+        showError('Connection error: ' + e.message);
+    }
     }
 
     // ---- Session Login ----

@@ -231,12 +231,20 @@
     // Previously the page had no guard: it called loadDashboard() immediately,
     // which triggered a 401 on every API call for unauthenticated users.
     (function checkAuth() {
-        const token = localStorage.getItem('jwt_token');
-        const authType = localStorage.getItem('auth_type');
-        if (!token && authType !== 'session') {
-            window.location.href = '/login.html';
-        }
-    })();
+    const token = localStorage.getItem('jwt_token');
+    const authType = localStorage.getItem('auth_type');
+
+    // TEMP DEBUG - remove later
+    console.log('=== AUTH DEBUG ===');
+    console.log('jwt_token:', token);
+    console.log('auth_type:', authType);
+    console.log('token length:', token?.length);
+    console.log('token starts with eyJ:', token?.startsWith('eyJ'));
+
+    if (!token && authType !== 'session') {
+        window.location.href = '/login.html';
+    }
+})();
 
     // ============ FIX 3: AUTH HEADER — session users send no JWT, rely on cookie ============
     // Previously getAuthHeader() always tried to send JWT. Session-logged-in users
@@ -259,7 +267,7 @@
                 credentials: 'include'
             });
 
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 // FIX: Clear ALL auth state, not just jwt_token
                 localStorage.removeItem('jwt_token');
                 localStorage.removeItem('auth_type');
@@ -382,24 +390,25 @@
     }
 
     async function loadMyLeaves() {
-        try {
-            const leaves = await apiFetch('/leave_requests');
-            const tbody = document.getElementById('my-leaves-list');
-            if (!leaves.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No leave requests found</td></tr>';
-            } else {
-                tbody.innerHTML = leaves.map(l => `<tr>
-                    <td>${l.leaveRequestId}</td>
-                    <td><span class="chip">${l.leaveType}</span></td>
-                    <td>${l.startDate}</td>
-                    <td>${l.endDate}</td>
-                    <td><span class="chip ${l.status?.toLowerCase()}">${l.status}</span></td>
-                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${l.reason || '-'}</td>
-                    <td>${l.status === 'PENDING' ? `<button class="btn btn-danger btn-sm" onclick="openCancelModal(${l.leaveRequestId})">Cancel</button>` : '-'}</td>
-                </tr>`).join('');
-            }
-        } catch (e) { console.error(e); }
-    }
+    try {
+        const data = await apiFetch('/leave_requests/employee');
+        const leaves = data.requests || []; // ← extract the array from wrapper
+        const tbody = document.getElementById('my-leaves-list');
+        if (!leaves.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No leave requests found</td></tr>';
+        } else {
+            tbody.innerHTML = leaves.map(l => `<tr>
+                <td>${l.leaveRequestId}</td>
+                <td><span class="chip">${l.leaveType}</span></td>
+                <td>${l.startDate}</td>
+                <td>${l.endDate}</td>
+                <td><span class="chip ${l.status?.toLowerCase()}">${l.status}</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${l.reason || '-'}</td>
+                <td>${l.status === 'PENDING' ? `<button class="btn btn-danger btn-sm" onclick="openCancelModal(${l.leaveRequestId})">Cancel</button>` : '-'}</td>
+            </tr>`).join('');
+        }
+    } catch (e) { console.error(e); }
+}
 
     async function loadPendingLeaves() {
         try {

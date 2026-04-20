@@ -51,7 +51,7 @@ public class LeaveRequestController {
     }
 
     @GetMapping("/employee")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('MANAGER','EMPLOYEE')")
     public ResponseEntity<?> getEmployeeLeaves(Authentication authentication) {
         return leaveRequestService.getLeaveRequestsByEmployee(authentication);
     }
