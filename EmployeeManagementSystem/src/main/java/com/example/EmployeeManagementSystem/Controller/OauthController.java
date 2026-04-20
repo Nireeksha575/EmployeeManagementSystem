@@ -1,11 +1,15 @@
 package com.example.EmployeeManagementSystem.Controller;
 
+import com.example.EmployeeManagementSystem.DTO.AuthResponse;
 import com.example.EmployeeManagementSystem.Entity.Employee;
+import com.example.EmployeeManagementSystem.Entity.RefreshToken;
 import com.example.EmployeeManagementSystem.Entity.Vendor;
 import com.example.EmployeeManagementSystem.Enum.Role;
 import com.example.EmployeeManagementSystem.Repository.EmployeeRepo;
+import com.example.EmployeeManagementSystem.Repository.RefreshTokenRepository;
 import com.example.EmployeeManagementSystem.Repository.VendorRepo;
 import com.example.EmployeeManagementSystem.Service.CombinedUserDetailService;
+import com.example.EmployeeManagementSystem.Service.RefreshTokenService;
 import com.example.EmployeeManagementSystem.Util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,8 +34,12 @@ import java.util.UUID;
 @RequestMapping("/auth/google")
 public class OauthController {
     private final EmployeeRepo employeeRepo;
-    public OauthController(EmployeeRepo employeeRepo) {
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    public OauthController(EmployeeRepo employeeRepo, RefreshTokenService refreshTokenService, RefreshTokenRepository refreshTokenRepository) {
         this.employeeRepo = employeeRepo;
+        this.refreshTokenService = refreshTokenService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
@@ -56,17 +64,17 @@ public class OauthController {
 
 
     @GetMapping("/callback")
-    public ResponseEntity<?> handelGoogleCallback(@RequestParam String code, @RequestParam(required = false) String state){
+    public ResponseEntity<?> handelGoogleCallback(@RequestParam String code, @RequestParam(required = false) String role){
         try {
             System.out.println("CODE RECEIVED: " + code);
-            System.out.println("STATE RECEIVED: " + state);
+            System.out.println("STATE RECEIVED: " + role);
             // Parse role from state parameter (sent from frontend)
             Role userRole = Role.EMPLOYEE; // default role
-            if(state != null && !state.isEmpty()) {
+            if(role != null && !role.isEmpty()) {
                 try {
-                    userRole = Role.valueOf(state.toUpperCase());
+                    userRole = Role.valueOf(role.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    System.out.println("Invalid role in state: " + state);
+                    System.out.println("Invalid role: " + role);
                 }
             }
             System.out.println("USER ROLE: " + userRole);
@@ -127,8 +135,22 @@ public class OauthController {
 
                     userDetails = combinedUserDetailService.loadUserByUsername(email);
                 }
-                String token= jwtUtil.generateToken(email);
-                return ResponseEntity.ok(Collections.singletonMap("token",token));
+                String accessToken= jwtUtil.generateToken(email);
+                RefreshToken refreshToken;
+
+                if (userDetails instanceof Employee employee) {
+                    refreshToken = refreshTokenService.createForEmployee(employee);
+                } else if (userDetails instanceof Vendor vendor) {
+                    refreshToken = refreshTokenService.createForVendor(vendor);
+                } else {
+                    throw new RuntimeException("Unknown user type");
+                }
+
+                refreshTokenRepository.save(refreshToken);
+
+                AuthResponse response = new AuthResponse(accessToken, refreshToken.getToken());
+
+                return ResponseEntity.ok(response);
             }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 

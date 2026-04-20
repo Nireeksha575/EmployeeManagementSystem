@@ -23,6 +23,16 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.1);
         }
+
+        .role-pill {
+    flex: 1; padding: 9px 6px; border-radius: 8px;
+    border: 1.5px solid #2a2f3f; background: #0d0f14;
+    color: #8b92a8; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.role-pill.active-employee { border-color:#4f8cff; background:rgba(79,140,255,0.12); color:#4f8cff; }
+.role-pill.active-manager  { border-color:#a78bfa; background:rgba(167,139,250,0.12); color:#a78bfa; }
+.role-pill.active-vendor   { border-color:#f87171; background:rgba(248,113,113,0.12); color:#f87171; }
         .logo { text-align: center; margin-bottom: 32px; }
         .logo h1 { color: #e0e0e0; font-size: 28px; }
         .logo span { color: #4f8cff; }
