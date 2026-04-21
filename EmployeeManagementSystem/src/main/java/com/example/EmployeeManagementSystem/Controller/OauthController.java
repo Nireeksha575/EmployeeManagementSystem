@@ -84,7 +84,7 @@ public class OauthController {
             params.add("code",code);
             params.add("client_id",client_id);
             params.add("client_secret",client_secret);
-            params.add("redirect_uri","http://localhost:8080/google.html");
+            params.add("redirect_uri","http://localhost:8080/login.html");
             params.add("grant_type","authorization_code");
 
             HttpHeaders headers=new HttpHeaders();
