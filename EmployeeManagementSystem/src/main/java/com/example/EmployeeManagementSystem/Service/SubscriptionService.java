@@ -53,7 +53,7 @@ public class SubscriptionService {
      * - No duplicate active subscription for the same employee + slot combination
      */
     public void addSubscription(SubscriptionRequest request,Authentication authentication) {
-        Employee employee = employeeRepo.findByName(authentication.getName())
+        Employee employee = employeeRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new EmployeeNotFound(
                         "Employee with id " + authentication.getName() + " not found"));
 

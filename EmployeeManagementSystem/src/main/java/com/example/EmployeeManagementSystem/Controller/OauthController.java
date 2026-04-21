@@ -64,7 +64,9 @@ public class OauthController {
 
 
     @GetMapping("/callback")
-    public ResponseEntity<?> handelGoogleCallback(@RequestParam String code, @RequestParam(required = false) String role){
+    public ResponseEntity<?> handelGoogleCallback(@RequestParam String code,
+                                                  @RequestParam(required = false) String role,
+                                                  @RequestParam(required = false, defaultValue = "Asia/Kolkata") String timezone){
         try {
             System.out.println("CODE RECEIVED: " + code);
             System.out.println("STATE RECEIVED: " + role);
@@ -84,7 +86,7 @@ public class OauthController {
             params.add("code",code);
             params.add("client_id",client_id);
             params.add("client_secret",client_secret);
-            params.add("redirect_uri","http://localhost:8080/login.html");
+            params.add("redirect_uri","http://localhost:8080/google.html");
             params.add("grant_type","authorization_code");
 
             HttpHeaders headers=new HttpHeaders();
@@ -119,6 +121,7 @@ public class OauthController {
                         manager.setName((String) userInfo.get("name"));
                         manager.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                         manager.setRole(Role.MANAGER);
+                        manager.setTimezone(timezone);
                         manager.setDept("UNASSIGNED");
                         employeeRepo.save(manager);
 
@@ -130,6 +133,7 @@ public class OauthController {
                         employee.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                         employee.setRole(Role.EMPLOYEE);
                         employee.setDept("UNASSIGNED");
+                        employee.setTimezone(timezone);
                         employeeRepo.save(employee);
                     }
 

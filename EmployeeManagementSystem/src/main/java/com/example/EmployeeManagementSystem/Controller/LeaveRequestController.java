@@ -46,8 +46,8 @@ public class LeaveRequestController {
 
     @PutMapping("/cancel/{leaveId}")
     @PreAuthorize("hasAuthority('LEAVE_CANCEL')")
-    public ResponseEntity<?> cancelLeaveRequest(@RequestParam String email,@PathVariable long leaveId){
-      return leaveRequestService.cancelLeaveRequest(email, leaveId);
+    public ResponseEntity<?> cancelLeaveRequest(Authentication authentication,@PathVariable long leaveId){
+      return leaveRequestService.cancelLeaveRequest(authentication, leaveId);
     }
 
     @GetMapping("/employee")

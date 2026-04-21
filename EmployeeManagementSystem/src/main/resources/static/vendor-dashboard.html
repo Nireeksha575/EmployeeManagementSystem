@@ -457,7 +457,7 @@
 
     function logout(){
         localStorage.removeItem('jwt_token');localStorage.removeItem('auth_type');
-        fetch(`${API}/session/logout`,{method:'POST',credentials:'include'}).finally(()=>window.location.href='/login.html');
+        fetch(`${API}/session/logout`,{method:'POST',credentials:'include'}).finally(()=>window.location.href='/google.html');
     }
 
     function showAlert(msg,type){

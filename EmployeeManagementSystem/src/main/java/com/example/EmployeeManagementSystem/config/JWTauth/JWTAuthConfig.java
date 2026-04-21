@@ -52,7 +52,8 @@ public class JWTAuthConfig {
                         .requestMatchers("/Authenticate","/Authenticate/refresh","/session/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-//                        .requestMatchers("/google.html").permitAll()
+                        .requestMatchers("/google.html").permitAll()
+                        .requestMatchers("/employee/register","/vendors/register","/employee/register/manager").permitAll()
                         .requestMatchers("/login.html", "/employee-dashboard.html", "/manager-dashboard.html", "/vendor-dashboard.html").permitAll()
                         .requestMatchers("/auth/google/callback").permitAll()
                         .requestMatchers("/api-keys/generate").authenticated()  // Requires auth

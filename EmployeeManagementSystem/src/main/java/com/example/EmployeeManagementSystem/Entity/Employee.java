@@ -19,7 +19,7 @@ public class Employee implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long employeeId;
-    @Column(nullable = false,unique = true)
+    @Column(nullable = true,unique = false)
     private String name;
     @Column(unique = true, nullable = false)
     private String email;

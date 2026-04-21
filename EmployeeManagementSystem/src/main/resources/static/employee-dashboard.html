@@ -141,6 +141,9 @@
         .sub-item:hover{border-color:var(--border2)}
         .sub-item .meal-name{font-weight:600;color:var(--text);margin-bottom:6px}
         .sub-item .meal-meta{font-size:11px;color:var(--text3)}
+
+        .chip.paused{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.2)}
+        .chip.expired{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
     </style>
 </head>
 <body>
@@ -248,14 +251,7 @@
                                 <select id="leave-type">
                                     <option value="SICK">Sick Leave</option>
                                     <option value="CASUAL">Casual Leave</option>
-                                    <option value="EARNED">Earned Leave</option>
-                                    <option value="MATERNITY">Maternity Leave</option>
-                                    <option value="PATERNITY">Paternity Leave</option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Your Email</label>
-                                <input type="email" id="leave-email" placeholder="your.email@company.com">
                             </div>
                             <div class="form-group">
                                 <label>Start Date</label>
@@ -319,7 +315,16 @@
                     </div>
                     <div class="tablewrap">
                         <table>
-                            <thead><tr><th>Restaurant</th><th>Meal Slot</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr></thead>
+                            <thead>
+                            <tr>
+                                <th>Restaurant</th>
+                                <th>Meal Slot</th>
+                                <th>Schedule</th>
+                                <th>Next Delivery</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
                             <tbody id="subscriptions-list"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
                         </table>
                     </div>
@@ -333,10 +338,6 @@
                     <div class="form-card">
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>Restaurant ID</label>
-                                <input type="number" id="sub-restaurant-id" placeholder="Restaurant ID">
-                            </div>
-                            <div class="form-group">
                                 <label>Meal Slot</label>
                                 <select id="sub-meal-slot">
                                     <option value="BREAKFAST">Breakfast</option>
@@ -345,12 +346,27 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Start Date</label>
-                                <input type="date" id="sub-start">
+                                <label>Restaurant ID</label>
+                                <input type="number" id="sub-restaurant-id" placeholder="Restaurant ID">
                             </div>
                             <div class="form-group">
-                                <label>End Date</label>
-                                <input type="date" id="sub-end">
+                                <label>Schedule Type</label>
+                                <select id="sub-schedule-type">
+                                    <option value="DAILY">Daily</option>
+                                    <option value="WEEKLY">Weekly</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="day-of-week-group" style="display:none">
+                                <label>Day of Week</label>
+                                <select id="sub-day-of-week">
+                                    <option value="MONDAY">Monday</option>
+                                    <option value="TUESDAY">Tuesday</option>
+                                    <option value="WEDNESDAY">Wednesday</option>
+                                    <option value="THURSDAY">Thursday</option>
+                                    <option value="FRIDAY">Friday</option>
+                                    <option value="SATURDAY">Saturday</option>
+                                    <option value="SUNDAY">Sunday</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-actions">
@@ -405,19 +421,25 @@
     }
 
     async function apiFetch(path, opts={}){
-        const res = await fetch(`${API}${path}`,{
-            ...opts,
-            headers:{'Content-Type':'application/json',...getAuthHeader(),...(opts.headers||{})},
-            credentials:'include'
-        });
-        if(res.status===401){
-            localStorage.removeItem('jwt_token'); localStorage.removeItem('auth_type');
-            showAlert('Session expired. Please login again.','error');
-            setTimeout(()=>window.location.href='/login.html',1500);
-            throw new Error('Unauthorized');
-        }
-        const text = await res.text();
-        return text ? JSON.parse(text) : null;
+    const res = await fetch(`${API}${path}`,{
+        ...opts,
+        headers:{'Content-Type':'application/json',...getAuthHeader(),...(opts.headers||{})},
+        credentials:'include'
+    });
+    if(res.status===401){
+        localStorage.removeItem('jwt_token'); localStorage.removeItem('auth_type');
+        showAlert('Session expired. Please login again.','error');
+        setTimeout(()=>window.location.href='/login.html',1500);
+        throw new Error('Unauthorized');
+    }
+    if(res.status===403) throw new Error('ACCESS_DENIED');
+    if(!res.ok){
+        const errText = await res.text();
+        throw new Error(errText || 'Request failed');
+    }
+    const text = await res.text();
+    try { return text ? JSON.parse(text) : null; }
+    catch { return text; } // plain string response
     }
 
     async function initUser(){
@@ -480,12 +502,25 @@
                 : '<tr><td colspan="5" class="empty-state">No leave requests yet</td></tr>';
         }catch(e){document.getElementById('recent-leaves').innerHTML='<tr><td colspan="5" class="empty-state">Could not load leave data</td></tr>';}
         try{
-            const subs=await apiFetch('/subscriptions/employee');
-            const arr=subs||[];
-            document.getElementById('dashboard-subs').innerHTML=arr.length
-                ? arr.slice(0,4).map(s=>`<div class="sub-item"><div class="meal-name">${s.restaurantName||'Restaurant'}</div><div class="meal-meta">${s.mealSlot||''} · ${s.startDate||''} to ${s.endDate||''}</div></div>`).join('')
-                : '<div style="padding:16px;color:var(--text3);font-style:italic">No active subscriptions</div>';
-        }catch(e){document.getElementById('dashboard-subs').innerHTML='<div style="padding:16px;color:var(--text3)">Could not load subscriptions</div>';}
+    const subs = await apiFetch('/subscription/user'); // ← fix endpoint
+    const arr = subs || [];
+    document.getElementById('dashboard-subs').innerHTML = arr.length
+        ? arr.filter(s => s.status === 'ACTIVE').slice(0,4).map(s => `
+            <div class="sub-item">
+                <div class="meal-name">${s.restaurantName || 'Restaurant'}</div>
+                <div class="meal-meta">
+                    ${s.mealSlot || ''} · ${s.scheduleType || ''}
+                    ${s.dayOfWeek ? ' · ' + s.dayOfWeek : ''}
+                </div>
+                <div class="meal-meta" style="margin-top:4px;color:var(--accent)">
+                    Next: ${s.nextDeliveryTime ? new Date(s.nextDeliveryTime).toLocaleString() : 'N/A'}
+                </div>
+            </div>`).join('')
+        : '<div style="padding:16px;color:var(--text3);font-style:italic">No active subscriptions</div>';
+       } catch(e) {
+     document.getElementById('dashboard-subs').innerHTML =
+        '<div style="padding:16px;color:var(--text3)">Could not load subscriptions</div>';
+        }
     }
 
     async function loadMyLeaves(){
@@ -493,18 +528,17 @@
             const data=await apiFetch('/leave_requests/employee');
             const leaves=data?.requests||data||[];
             document.getElementById('my-leaves-list').innerHTML=leaves.length
-                ? leaves.map(l=>`<tr><td><span class="chip ${(l.leaveType||'').toLowerCase()}">${l.leaveType||'N/A'}</span></td><td>${l.startDate||'—'}</td><td>${l.endDate||'—'}</td><td>${l.numberOfDays||'—'}</td><td>${(l.reason||'—').substring(0,30)}</td><td><span class="chip ${(l.status||'').toLowerCase()}">${l.status}</span></td><td>${l.status==='PENDING'?`<button class="btn btn-danger btn-sm" onclick="cancelLeave(${l.id})">Cancel</button>`:'—'}</td></tr>`).join('')
+                ? leaves.map(l=>`<tr><td><span class="chip ${(l.leaveType||'').toLowerCase()}">${l.leaveType||'N/A'}</span></td><td>${l.startDate||'—'}</td><td>${l.endDate||'—'}</td><td>${l.numberOfDays||'—'}</td><td>${(l.reason||'—').substring(0,30)}</td><td><span class="chip ${(l.status||'').toLowerCase()}">${l.status}</span></td><td>${l.status==='PENDING' ? `<button class="btn btn-danger btn-sm" onclick="cancelLeave(${l.leaveRequestId})">Cancel</button>` : '—'}</td></tr>`).join('')
                 : '<tr><td colspan="7" class="empty-state">No leave requests found</td></tr>';
         }catch(e){document.getElementById('my-leaves-list').innerHTML='<tr><td colspan="7" class="empty-state">Could not load leave requests</td></tr>';}
     }
 
     async function applyLeave(){
-        const email=document.getElementById('leave-email').value.trim();
         const leaveType=document.getElementById('leave-type').value;
         const startDate=document.getElementById('leave-start').value;
         const endDate=document.getElementById('leave-end').value;
         const reason=document.getElementById('leave-reason').value.trim();
-        if(!email||!startDate||!endDate){showAlert('Please fill all required fields','error');return;}
+        if(!startDate||!endDate){showAlert('Please fill all required fields','error');return;}
         try{
             await apiFetch('/leave_requests',{method:'POST',body:JSON.stringify({leaveType,startDate,endDate,reason})});
             showAlert('Leave request submitted!','success');
@@ -513,55 +547,101 @@
     }
 
     async function cancelLeave(id){
-        if(!confirm('Cancel this leave request?')) return;
-        try{await apiFetch(`/leave_requests/${id}`,{method:'DELETE'});showAlert('Request cancelled','success');loadMyLeaves();}
-        catch(e){showAlert('Failed to cancel','error');}
+    if(!confirm('Cancel this leave request?')) return;
+    try{
+        await apiFetch(`/leave_requests/cancel/${id}`, {method:'PUT'});
+        showAlert('Request cancelled successfully','success');
+        loadMyLeaves();
     }
+    catch(e){
+        if(e.message === 'ACCESS_DENIED') showAlert('You do not have permission to cancel this leave','error');
+        else showAlert('Failed to cancel: ' + e.message, 'error');
+    }
+   }
 
     function clearLeaveForm(){
-        ['leave-email','leave-start','leave-end','leave-reason'].forEach(id=>{document.getElementById(id).value='';});
+        ['leave-start','leave-end','leave-reason'].forEach(id=>{document.getElementById(id).value='';});
     }
 
     async function loadRestaurants(){
-        try{
-            const data=await apiFetch('/restaurants');
-            document.getElementById('restaurants-list').innerHTML=data?.length
-                ? data.map(r=>`<tr><td>${r.name||'—'}</td><td>${r.mealSlot||'—'}</td><td><span class="chip active">${r.active?'Active':'Inactive'}</span></td><td><button class="btn btn-secondary btn-sm" onclick="document.getElementById('sub-restaurant-id').value='${r.id}';showView('add-subscription',null)">Subscribe</button></td></tr>`).join('')
-                : '<tr><td colspan="4" class="empty-state">No restaurants available</td></tr>';
-        }catch(e){document.getElementById('restaurants-list').innerHTML='<tr><td colspan="4" class="empty-state">Could not load restaurants</td></tr>';}
-    }
+    try{
+        const data=await apiFetch('/restaurants');
+        document.getElementById('restaurants-list').innerHTML=data?.length
+            ? data.map(r=>`<tr>
+                <td>${r.name||'—'}</td>
+                <td>${r.supportedMealSlots?.join(', ') || '—'}</td>
+                <td><span class="chip active">${r.active?'Active':'Inactive'}</span></td>
+                <td><button class="btn btn-secondary btn-sm" onclick="document.getElementById('sub-restaurant-id').value='${r.id}';showView('add-subscription',null)">Subscribe</button></td>
+              </tr>`).join('')
+            : '<tr><td colspan="4" class="empty-state">No restaurants available</td></tr>';
+    }catch(e){document.getElementById('restaurants-list').innerHTML='<tr><td colspan="4" class="empty-state">Could not load restaurants</td></tr>';}
+   }
 
     async function loadSubscriptions(){
-        try{
-            const data=await apiFetch('/subscriptions/employee');
-            const arr=data||[];
-            document.getElementById('subscriptions-list').innerHTML=arr.length
-                ? arr.map(s=>`<tr><td>${s.restaurantName||s.restaurantId||'—'}</td><td>${s.mealSlot||'—'}</td><td>${s.startDate||'—'}</td><td>${s.endDate||'—'}</td><td><span class="chip active">${s.status||'ACTIVE'}</span></td><td><button class="btn btn-danger btn-sm" onclick="cancelSub(${s.id})">Cancel</button></td></tr>`).join('')
-                : '<tr><td colspan="6" class="empty-state">No subscriptions found</td></tr>';
-        }catch(e){document.getElementById('subscriptions-list').innerHTML='<tr><td colspan="6" class="empty-state">Could not load subscriptions</td></tr>';}
+    try{
+        const data = await apiFetch('/subscription/user');
+        const arr = data || [];
+        document.getElementById('subscriptions-list').innerHTML = arr.length
+            ? arr.map(s => `<tr>
+                <td>${s.restaurantName || s.restaurantId || '—'}</td>
+                <td>${s.mealSlot || '—'}</td>
+                <td>${s.scheduleType || '—'}${s.dayOfWeek ? ' · ' + s.dayOfWeek : ''}</td>
+                <td>${s.nextDeliveryTime ? new Date(s.nextDeliveryTime).toLocaleString() : '—'}</td>
+                <td><span class="chip ${(s.status||'').toLowerCase()}">${s.status || 'ACTIVE'}</span></td>
+                <td><button class="btn btn-danger btn-sm" onclick="cancelSub(${s.subscriptionId})">Cancel</button></td>
+              </tr>`).join('')
+            : '<tr><td colspan="6" class="empty-state">No subscriptions found</td></tr>';
+    } catch(e) {
+        document.getElementById('subscriptions-list').innerHTML =
+            '<tr><td colspan="6" class="empty-state">Could not load subscriptions</td></tr>';
+    }
+}
+
+    document.getElementById('sub-schedule-type').addEventListener('change', function(){
+    document.getElementById('day-of-week-group').style.display =
+        this.value === 'WEEKLY' ? 'block' : 'none';
+    });
+
+   async function addSubscription(){
+    const restaurantId = parseInt(document.getElementById('sub-restaurant-id').value);
+    const mealSlot = document.getElementById('sub-meal-slot').value;
+    const scheduleType = document.getElementById('sub-schedule-type').value;
+    const dayOfWeek = document.getElementById('sub-day-of-week')?.value;
+
+    if(!restaurantId || !mealSlot){
+        showAlert('Please fill all fields','error'); return;
     }
 
-    async function addSubscription(){
-        const restaurantId=document.getElementById('sub-restaurant-id').value;
-        const mealSlot=document.getElementById('sub-meal-slot').value;
-        const startDate=document.getElementById('sub-start').value;
-        const endDate=document.getElementById('sub-end').value;
-        if(!restaurantId||!startDate||!endDate){showAlert('Please fill all fields','error');return;}
-        try{
-            await apiFetch('/subscriptions',{method:'POST',body:JSON.stringify({restaurantId:parseInt(restaurantId),mealSlot,startDate,endDate})});
-            showAlert('Subscribed successfully!','success');
-        }catch(e){showAlert('Subscription failed: '+e.message,'error');}
-    }
+    const body = {
+        scheduleType,
+        mealSlots: [mealSlot],
+        slotOrders: [{ mealSlot, restaurantId }]
+    };
+    if(scheduleType === 'WEEKLY' && dayOfWeek) body.dayOfWeek = dayOfWeek;
 
-    async function cancelSub(id){
-        if(!confirm('Cancel this subscription?')) return;
-        try{await apiFetch(`/subscriptions/${id}`,{method:'DELETE'});showAlert('Subscription cancelled','success');loadSubscriptions();}
-        catch(e){showAlert('Failed to cancel','error');}
+    try{
+        await apiFetch('/subscription', {method:'POST', body:JSON.stringify(body)});
+        showAlert('Subscribed successfully!','success');
+    }catch(e){
+        showAlert('Subscription failed: '+e.message,'error');
     }
+   }
+
+   async function cancelSub(id){
+    if(!confirm('Cancel this subscription?')) return;
+    try{
+        await apiFetch(`/subscription/${id}/expire`, {method:'PUT'});
+        showAlert('Subscription cancelled','success');
+        loadSubscriptions();
+    }
+    catch(e){
+        showAlert('Failed to cancel: ' + e.message,'error');
+    }
+}
 
     function logout(){
         localStorage.removeItem('jwt_token'); localStorage.removeItem('auth_type');
-        fetch(`${API}/session/logout`,{method:'POST',credentials:'include'}).finally(()=>window.location.href='/login.html');
+        fetch(`${API}/session/logout`,{method:'POST',credentials:'include'}).finally(()=>window.location.href='/google.html');
     }
 
     function showAlert(msg,type){

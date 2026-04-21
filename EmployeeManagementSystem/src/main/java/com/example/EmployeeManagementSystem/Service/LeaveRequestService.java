@@ -169,9 +169,9 @@ public class LeaveRequestService {
          return ResponseEntity.ok(leaveRequestRepo.save(leaveRequest));
     }
 
-    public ResponseEntity<?> cancelLeaveRequest(String email,long leaveId){
-        var employee=employeeRepo.findByEmail(email).orElseThrow(
-                ()->new EmployeeNotFound("Employee with email:"+email+" not found")
+    public ResponseEntity<?> cancelLeaveRequest(Authentication authentication,long leaveId){
+        var employee=employeeRepo.findByEmail(authentication.getName()).orElseThrow(
+                ()->new EmployeeNotFound("Employee with email:"+authentication.getName()+" not found")
         );
         var leaveRequest=leaveRequestRepo.findById(leaveId).orElseThrow(
                 ()->new LeaveRequestNotFoundException("Leave request with id:"+leaveId+" is not found")

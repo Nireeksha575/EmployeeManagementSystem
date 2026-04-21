@@ -34,7 +34,7 @@ public class VendorController {
         this.vendorService = vendorService;
     }
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<VendorDTO> registerVendor(@RequestBody VendorRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(vendorService.registerVendor(request));
