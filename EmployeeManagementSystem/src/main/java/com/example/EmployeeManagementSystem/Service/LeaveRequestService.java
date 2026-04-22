@@ -162,7 +162,7 @@ public class LeaveRequestService {
          else{
              return ResponseEntity.badRequest().body("Invalid action,Use APPROVED or REJECTED");
          }
-         leaveRequest.setManager(manager.getName());
+         leaveRequest.setManager(manager.getEmail());
          if(actionDTO.getRemarks()!=null){
              leaveRequest.setRemarks(actionDTO.getRemarks());
          }

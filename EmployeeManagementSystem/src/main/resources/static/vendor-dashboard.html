@@ -247,17 +247,35 @@
                     <div class="section-head"><div class="section-title">// add_restaurant</div></div>
                     <div class="form-card">
                         <div class="form-grid">
-                            <div class="form-group full"><label>Restaurant Name</label><input id="rest-name" placeholder="My Restaurant Name"></div>
-                            <div class="form-group">
-                                <label>Meal Slot</label>
-                                <select id="rest-slot">
-                                    <option value="BREAKFAST">Breakfast</option>
-                                    <option value="LUNCH">Lunch</option>
-                                    <option value="DINNER">Dinner</option>
-                                </select>
+                            <div class="form-group full">
+                                <label>Restaurant Name</label>
+                                <input id="rest-name" placeholder="My Restaurant Name">
                             </div>
-                            <div class="form-group"><label>Vendor ID</label><input type="number" id="rest-vendor-id" placeholder="Your vendor ID"></div>
-                            <div class="form-group full"><label>Description (optional)</label><textarea id="rest-desc" rows="2" placeholder="Brief description of your restaurant..."></textarea></div>
+
+                            <div class="form-group full">
+                                <label>Address</label>
+                                <input id="rest-address" placeholder="Street, area, city">
+                            </div>
+
+                            <div class="form-group full">
+                                <label>Meal Slots</label>
+                                <div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px">
+                                    <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-family:var(--font);text-transform:none;letter-spacing:0;font-size:13px">
+                                        <input type="checkbox" class="rest-slot-check" value="BREAKFAST" style="width:auto"> Breakfast
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-family:var(--font);text-transform:none;letter-spacing:0;font-size:13px">
+                                        <input type="checkbox" class="rest-slot-check" value="LUNCH" style="width:auto"> Lunch
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-family:var(--font);text-transform:none;letter-spacing:0;font-size:13px">
+                                        <input type="checkbox" class="rest-slot-check" value="DINNER" style="width:auto"> Dinner
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group full">
+                                <label>Description (optional)</label>
+                                <textarea id="rest-desc" rows="2" placeholder="Brief description of your restaurant..."></textarea>
+                            </div>
                         </div>
                         <div class="form-actions">
                             <button class="btn btn-primary" onclick="addRestaurant()">CREATE RESTAURANT</button>
@@ -348,15 +366,21 @@
         let email='';
         if(token){try{const p=JSON.parse(atob(token.split('.')[1]));email=p.sub||p.email||'';}catch(e){}}
         document.getElementById('avatar-initials').textContent=(email||'V').charAt(0).toUpperCase();
-        document.getElementById('sidebar-name').textContent=email.split('@')[0]||'Vendor';
+        document.getElementById('sidebar-name').textContent=(email.split('@')[0]||'Vendor');
         document.getElementById('topbar-email').textContent=email;
         document.getElementById('p-email').textContent=email;
-        // Try load vendor profile
+
         try{
-            const vendors=await apiFetch('/vendors');
-            const me=(vendors||[]).find(v=>v.email===email);
-            if(me){vendorId=me.id||me.vendorId;document.getElementById('p-name').textContent=me.name||'—';document.getElementById('p-id').textContent=vendorId||'—';document.getElementById('rest-vendor-id').value=vendorId||'';}
-        }catch(e){}
+            const me = await apiFetch('/vendors/me');
+            if(me){
+                vendorId = me.id || me.vendorId || null;
+                document.getElementById('p-name').textContent = me.name || '—';
+                document.getElementById('p-id').textContent = vendorId || '—';
+            }
+        }catch(e){
+            console.error('Could not load vendor profile', e);
+        }
+
         loadDashboard();
     }
 
@@ -373,64 +397,84 @@
     async function loadDashboard(){
         try{
             const [rests,subs,deliveries]=await Promise.all([
-                apiFetch(vendorId?`/restaurants/vendor/${vendorId}`:'/restaurants'),
+                apiFetch('/restaurants/vendor').catch(()=>[]),
                 apiFetch('/subscriptions').catch(()=>[]),
                 apiFetch('/deliveries').catch(()=>[])
             ]);
+
             const restArr=rests||[];
             const subArr=subs||[];
             const delArr=deliveries||[];
+
             document.getElementById('stat-restaurants').textContent=restArr.filter(r=>r.active!==false).length;
             document.getElementById('stat-subs').textContent=subArr.length;
             document.getElementById('stat-deliveries').textContent=delArr.length;
             document.getElementById('stat-pending').textContent=delArr.filter(d=>d.status==='PENDING').length;
-            // Dash restaurants
+
             document.getElementById('dash-restaurants').innerHTML=restArr.length
-                ? restArr.slice(0,4).map(r=>`<div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;color:var(--text);font-size:13px">${r.name||'—'}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${r.mealSlot||'—'}</div></div><span class="chip ${r.active!==false?'active':'inactive'}">${r.active!==false?'LIVE':'OFF'}</span></div>`).join('')
+                ? restArr.slice(0,4).map(r=>`<div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;color:var(--text);font-size:13px">${r.name||'—'}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${r.supportedMealSlots?.join(', ')||'—'}</div></div><span class="chip ${r.active!==false?'active':'inactive'}">${r.active!==false?'LIVE':'OFF'}</span></div>`).join('')
                 : '<div class="empty-state">no restaurants yet</div>';
-            // Dash deliveries
+
             document.getElementById('dash-deliveries').innerHTML=delArr.length
                 ? delArr.slice(0,5).map(d=>`<tr><td>${d.restaurantName||d.restaurantId||'—'}</td><td><span class="chip ${(d.mealSlot||'').toLowerCase()}">${d.mealSlot||'—'}</span></td><td><span class="chip ${(d.status||'pending').toLowerCase()}">${d.status||'—'}</span></td></tr>`).join('')
                 : '<tr><td colspan="3" class="empty-state">no deliveries</td></tr>';
         }catch(e){console.error(e);}
     }
 
+
     async function loadMyRestaurants(){
         try{
-            const rests=await apiFetch(vendorId?`/restaurants/vendor/${vendorId}`:'/restaurants');
+            const rests=await apiFetch('/restaurants/vendor');
             const arr=rests||[];
             document.getElementById('restaurants-grid').innerHTML=arr.length
                 ? arr.map(r=>`<div class="restaurant-card ${r.active===false?'inactive':''}">
-          <div class="rest-name">${r.name||'—'}</div>
-          <div class="rest-meta">${r.mealSlot||'—'} · ID: ${r.id||r.restaurantId||'—'}</div>
-          <div class="rest-actions">
-            ${r.active!==false
+      <div class="rest-name">${r.name||'—'}</div>
+      <div class="rest-meta">${r.supportedMealSlots?.join(', ')||'—'} · ID: ${r.id||r.restaurantId||'—'}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${r.address||'—'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">${r.description||''}</div>
+      <div class="rest-actions">
+        ${r.active!==false
                     ? `<button class="btn btn-warning btn-sm" onclick="deactivateRestaurant(${r.id||r.restaurantId})">DEACTIVATE</button>`
                     : `<span style="font-size:10px;color:var(--red);font-family:var(--mono)">INACTIVE</span>`}
-          </div>
-        </div>`).join('')
+      </div>
+    </div>`).join('')
                 : '<div class="empty-state">no restaurants found. create one!</div>';
-        }catch(e){document.getElementById('restaurants-grid').innerHTML='<div class="empty-state">could not load restaurants</div>';}
+        }catch(e){
+            document.getElementById('restaurants-grid').innerHTML='<div class="empty-state">could not load restaurants</div>';
+        }
     }
+
 
     async function addRestaurant(){
         const name=document.getElementById('rest-name').value.trim();
-        const mealSlot=document.getElementById('rest-slot').value;
-        const vid=document.getElementById('rest-vendor-id').value;
-        if(!name||!vid){showAlert('NAME AND VENDOR ID REQUIRED','error');return;}
+        const address=document.getElementById('rest-address').value.trim();
+        const description=document.getElementById('rest-desc').value.trim();
+        const supportedMealSlots=Array.from(document.querySelectorAll('.rest-slot-check:checked')).map(el=>el.value);
+
+        if(!name || !address || supportedMealSlots.length===0){
+            showAlert('NAME, ADDRESS AND AT LEAST ONE MEAL SLOT REQUIRED','error');
+            return;
+        }
+
         try{
-            await apiFetch('/restaurants',{method:'POST',body:JSON.stringify({name,mealSlot,vendorId:parseInt(vid)})});
-            showAlert('RESTAURANT CREATED!','success');clearRestForm();loadMyRestaurants();
-        }catch(e){showAlert('FAILED: '+e.message,'error');}
+            await apiFetch('/restaurants',{
+                method:'POST',
+                body:JSON.stringify({name,address,description,supportedMealSlots})
+            });
+            showAlert('RESTAURANT CREATED!','success');
+            clearRestForm();
+            loadMyRestaurants();
+            loadDashboard();
+        }catch(e){
+            showAlert('FAILED: '+e.message,'error');
+        }
     }
 
-    async function deactivateRestaurant(id){
-        if(!confirm('Deactivate this restaurant?'))return;
-        try{await apiFetch(`/restaurants/${id}/deactivate`,{method:'PUT'});showAlert('DEACTIVATED','success');loadMyRestaurants();}
-        catch(e){showAlert('FAILED','error');}
-    }
 
-    function clearRestForm(){['rest-name','rest-desc'].forEach(id=>document.getElementById(id).value='');}
+    function clearRestForm(){
+        ['rest-name','rest-address','rest-desc'].forEach(id=>document.getElementById(id).value='');
+        document.querySelectorAll('.rest-slot-check').forEach(el=>el.checked=false);
+    }
 
     async function loadSubscriptions(){
         try{
