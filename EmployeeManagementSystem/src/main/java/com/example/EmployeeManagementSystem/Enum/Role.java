@@ -22,7 +22,8 @@ public enum Role {
             Permission.RESTAURANTS_ADD,
             Permission.RESTAURANTS_DELETE,
             Permission.RESTAURANTS_READ
-    ));
+    )),
+    ADMIN(Set.of());
     private final Set<Permission> permissions;
 
     Role(Set<Permission> permissions) {
