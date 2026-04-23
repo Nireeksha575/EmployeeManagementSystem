@@ -470,7 +470,7 @@
         const managerId=document.getElementById('emp-manager').value;
         if(!name||!email||!password||!dept){showAlert('Please fill all required fields','error');return;}
         try{
-            await apiFetch('/employee',{method:'POST',body:JSON.stringify({name,email,password,dept,role,managerId:managerId?parseInt(managerId):null})});
+            await apiFetch('/employee/register',{method:'POST',body:JSON.stringify({name,email,password,dept,role,managerId:managerId?parseInt(managerId):null})});
             showAlert('Employee added successfully!','success');clearEmpForm();
         }catch(e){showAlert('Failed: '+e.message,'error');}
     }

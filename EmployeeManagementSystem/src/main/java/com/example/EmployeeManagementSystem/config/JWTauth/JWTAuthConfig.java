@@ -11,8 +11,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -48,18 +52,38 @@ public class JWTAuthConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .securityContext(ctx -> ctx
+                        .securityContextRepository(new DelegatingSecurityContextRepository(
+                                new HttpSessionSecurityContextRepository(),
+                                new RequestAttributeSecurityContextRepository()
+                        ))
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/Authenticate","/Authenticate/refresh","/session/**").permitAll()
+                        .requestMatchers("/Authenticate", "/Authenticate/refresh").permitAll()
+                        .requestMatchers("/session/login", "/session/logout").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/auth/google/init").permitAll()          // ✅ init endpoint
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/google.html").permitAll()
-                        .requestMatchers("/employee/register","/vendors/register","/employee/register/manager").permitAll()
-                        .requestMatchers("/login.html", "/employee-dashboard.html", "/manager-dashboard.html", "/vendor-dashboard.html").permitAll()
-                        .requestMatchers("/auth/google/callback").permitAll()
-                        .requestMatchers("/api-keys/generate").authenticated()  // Requires auth
+                        .requestMatchers("/google.html", "/login.html", "/dashboard.html").permitAll()
+                        .requestMatchers("/employee-dashboard.html", "/vendor-dashboard.html","/manager-dashboard.html").permitAll()
+                        .requestMatchers("/auth/google/init","/auth/google/callback").permitAll()
+                        .requestMatchers("/api-keys/generate").authenticated()
                         .anyRequest().authenticated()
                 )
-                // Add API Key filter BEFORE JWT filter
+
+//                // ✅ THIS WAS MISSING — the entire oauth2Login block
+//                .oauth2Login(oauth -> oauth
+//                        .userInfoEndpoint(userInfo -> userInfo
+//                                .userService(customOAuth2UserService())
+//                        )
+//                        .successHandler(oAuth2SuccessHandler())
+//                )
+
                 .addFilterBefore(apiKeyFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

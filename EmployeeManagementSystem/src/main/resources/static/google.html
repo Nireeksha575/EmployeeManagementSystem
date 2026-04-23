@@ -292,7 +292,7 @@
         <!-- JWT FORM -->
         <div id="jwt-form">
             <div class="form-group">
-                <label class="form-label">Username / Email</label>
+                <label class="form-label">Enter your Email</label>
                 <input class="form-input" id="jwt-username" type="text" placeholder="your.email@company.com" autocomplete="off">
             </div>
             <div class="form-group">
@@ -305,7 +305,7 @@
         <!-- SESSION FORM -->
         <div id="session-form" style="display:none">
             <div class="form-group">
-                <label class="form-label">Username / Email</label>
+                <label class="form-label">Enter your Email</label>
                 <input class="form-input" id="session-username" type="text" placeholder="your.email@company.com">
             </div>
             <div class="form-group">
@@ -355,12 +355,6 @@
                 </select>
                 <span class="tz-time" id="tz-time">--:--:--</span>
             </div>
-            <div class="demo-box">
-                <div class="demo-title">Demo Credentials</div>
-                <div class="demo-row"><span>Employee</span><code>john.doe / password123</code></div>
-                <div class="demo-row"><span>Manager</span><code>jane.manager / manager123</code></div>
-                <div class="demo-row"><span>Vendor</span><code>vendor@email.com / vendor123</code></div>
-            </div>
         </div>
 
     </div>
@@ -380,39 +374,43 @@
 
     let currentRole = 'EMPLOYEE';
 
-    // ---- Auth guard: already logged in? ----
-    (function(){
-        const token = localStorage.getItem('jwt_token');
-        const authType = localStorage.getItem('auth_type');
-        if (token || authType === 'session') {
-            redirectByRole(token);
+    function buildAuthOptions(token, authType) {
+        const headers = {};
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
         }
-    })();
 
-    // ---- Decode JWT and route ----
-    function redirectByRole(token) {
+        return {
+            headers,
+            credentials: authType === 'session' ? 'include' : 'same-origin'
+        };
+    }
+
+    async function resolveRoleFromServer(token, authType) {
+        const authOptions = buildAuthOptions(token, authType);
+
+        const vendorResponse = await fetch(`${API}/vendors/me`, authOptions);
+        if (vendorResponse.ok) {
+            return 'VENDOR';
+        }
+
+        const employeeResponse = await fetch(`${API}/employee/me`, authOptions);
+        if (employeeResponse.ok) {
+            const employee = await employeeResponse.json();
+            return employee.role || 'EMPLOYEE';
+        }
+
+        throw new Error('Unable to determine authenticated role');
+    }
+
+    async function redirectByRole(token, authType = localStorage.getItem('auth_type')) {
         let role = localStorage.getItem('last_role') || 'EMPLOYEE';
 
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const authorities =
-                    payload.roles ||
-                    payload.authorities ||
-                    payload.scope ||
-                    payload.role ||
-                    '';
-
-                const authText = Array.isArray(authorities)
-                    ? authorities.join(',')
-                    : String(authorities);
-
-                if (authText.includes('MANAGER') || authText.includes('ROLE_MANAGER')) role = 'MANAGER';
-                else if (authText.includes('VENDOR') || authText.includes('ROLE_VENDOR')) role = 'VENDOR';
-                else if (authText.includes('EMPLOYEE') || authText.includes('ROLE_EMPLOYEE')) role = 'EMPLOYEE';
-            } catch (e) {
-                console.warn('JWT decode failed, using saved role');
-            }
+        try {
+            role = await resolveRoleFromServer(token, authType);
+            localStorage.setItem('last_role', role);
+        } catch (e) {
+            console.warn('Role lookup failed, using saved role', e);
         }
 
         window.location.href = DASHBOARDS[role] || DASHBOARDS.EMPLOYEE;
@@ -485,7 +483,7 @@
                 localStorage.setItem('last_role', currentRole);
                 localStorage.setItem('user_timezone', document.getElementById('tz-select').value);
                 showStatus('success', 'Login successful! Redirecting...');
-                setTimeout(() => redirectByRole(data.accessToken), 600);
+                setTimeout(() => redirectByRole(data.accessToken, 'jwt'), 600);
             } else {
                 const err = await res.text();
                 showStatus('error', 'Login failed: ' + (err || 'Invalid credentials'));
@@ -518,7 +516,7 @@
                 localStorage.setItem('last_role', currentRole);
                 localStorage.setItem('user_timezone', document.getElementById('tz-select').value);
                 showStatus('success', 'Login successful! Redirecting...');
-                setTimeout(() => window.location.href = DASHBOARDS[currentRole], 600);
+                setTimeout(() => redirectByRole(null, 'session'), 600);
             } else {
                 const err = await res.json().catch(() => ({}));
                 showStatus('error', 'Login failed: ' + (err.error || 'Invalid credentials'));
@@ -576,7 +574,7 @@
                 localStorage.setItem('last_role', role);
                 localStorage.removeItem('oauth_role');
                 showStatus('success', 'Signed in! Redirecting to your dashboard...');
-                setTimeout(() => redirectByRole(data.accessToken), 800);
+                setTimeout(() => redirectByRole(data.accessToken, 'jwt'), 800);
             } else {
                 showStatus('error', 'Sign-in failed: no token received.');
             }
@@ -611,16 +609,23 @@
         refreshTzClock();
         setInterval(refreshTzClock, 1000);
 
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
 
-    if (code) {
-        // Coming back from Google — show loading overlay, hide form
-        document.getElementById('oauth-loading').classList.add('visible');
-        document.querySelector('.right-panel').style.display = 'none';
-        document.querySelector('.left-panel').style.display = 'none';
-        handleOAuthCallback();
-    }
+        if (code) {
+            // Coming back from Google — show loading overlay, hide form
+            document.getElementById('oauth-loading').classList.add('visible');
+            document.querySelector('.right-panel').style.display = 'none';
+            document.querySelector('.left-panel').style.display = 'none';
+            handleOAuthCallback();
+            return;
+        }
+
+        const token = localStorage.getItem('jwt_token');
+        const authType = localStorage.getItem('auth_type');
+        if (token || authType === 'session') {
+            redirectByRole(token, authType);
+        }
    };
 </script>
 </body>
