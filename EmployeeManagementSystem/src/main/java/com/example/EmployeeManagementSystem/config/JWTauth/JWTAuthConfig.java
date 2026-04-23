@@ -69,7 +69,7 @@ public class JWTAuthConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/auth/google/init").permitAll()          // ✅ init endpoint
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/google.html", "/login.html", "/dashboard.html").permitAll()
+                        .requestMatchers("/google.html").permitAll()
                         .requestMatchers("/employee-dashboard.html", "/vendor-dashboard.html","/manager-dashboard.html").permitAll()
                         .requestMatchers("/auth/google/init","/auth/google/callback").permitAll()
                         .requestMatchers("/api-keys/generate").authenticated()
