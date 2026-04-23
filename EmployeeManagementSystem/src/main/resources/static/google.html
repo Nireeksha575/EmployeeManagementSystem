@@ -530,58 +530,34 @@
 
     // ---- Google OAuth ----
     function googleLogin() {
-        const role = document.getElementById('oauth-role').value;
-        localStorage.setItem('oauth_role', role);
-        localStorage.setItem('user_timezone', document.getElementById('tz-select').value);
-        const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
-        window.location.href =
-            `https://accounts.google.com/o/oauth2/v2/auth` +
-            `?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
-            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-            `&response_type=code` +
-            `&scope=${encodeURIComponent(scope)}`;
+    const role     = document.getElementById('oauth-role').value;
+    const timezone = document.getElementById('tz-select').value;
+
+    // Go to YOUR backend init endpoint — NOT directly to Google
+    window.location.href =
+        `/auth/google/init` +
+        `?role=${encodeURIComponent(role)}` +
+        `&timezone=${encodeURIComponent(timezone)}`;
     }
 
-    // ---- OAuth callback handler (runs when Google redirects back here) ----
-    async function handleOAuthCallback() {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        if (!code) return;
-        // Clear the code from URL immediately
-        window.history.replaceState({}, document.title, window.location.pathname);
-        showStatus('loading', 'Signing you in with Google...');
-        const role = localStorage.getItem('oauth_role') || 'EMPLOYEE';
-        const timezone = localStorage.getItem('user_timezone') || 'Asia/Kolkata';
-        try {
-            const res = await fetch(
-    `${API}/auth/google/callback` +
-    `?code=${encodeURIComponent(code)}` +
-    `&role=${encodeURIComponent(role)}` +
-    `&timezone=${encodeURIComponent(timezone)}`  // ← ADD
-      );
+// ---- Spring redirects back here with tokens as query params ----
+   async function handleOAuthCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken  = params.get('accessToken');
+    const refreshToken = params.get('refreshToken');
 
-            if (!res.ok) {
-                const txt = await res.text();
-                showStatus('error', 'Google sign-in failed. Please try again.');
-                console.error('OAuth error:', res.status, txt);
-                return;
-            }
-            const data = await res.json();
-            if (data.accessToken) {
-                localStorage.setItem('jwt_token', data.accessToken);
-                localStorage.setItem('refresh_token', data.refreshToken || '');
-                localStorage.setItem('auth_type', 'jwt');
-                localStorage.setItem('last_role', role);
-                localStorage.removeItem('oauth_role');
-                showStatus('success', 'Signed in! Redirecting to your dashboard...');
-                setTimeout(() => redirectByRole(data.accessToken, 'jwt'), 800);
-            } else {
-                showStatus('error', 'Sign-in failed: no token received.');
-            }
-        } catch(e) {
-            showStatus('error', 'Server error: ' + e.message);
-        }
-    }
+    if (!accessToken) return; // Not an OAuth callback, normal page load
+
+    // Clean tokens from the URL immediately
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    localStorage.setItem('jwt_token',     accessToken);
+    localStorage.setItem('refresh_token', refreshToken || '');
+    localStorage.setItem('auth_type',     'jwt');
+
+    showStatus('success', 'Signed in! Redirecting...');
+    setTimeout(() => redirectByRole(accessToken), 800);
+   }
 
     // ---- Timezone ----
     function updateTz() {
@@ -604,29 +580,22 @@
 
     // ---- Init ----
     window.onload = () => {
-        const savedTz = localStorage.getItem('user_timezone') || 'Asia/Kolkata';
-        document.getElementById('tz-select').value = savedTz;
-        refreshTzClock();
-        setInterval(refreshTzClock, 1000);
+    const savedTz = localStorage.getItem('user_timezone') || 'Asia/Kolkata';
+    document.getElementById('tz-select').value = savedTz;
+    refreshTzClock();
+    setInterval(refreshTzClock, 1000);
 
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');  // ← was 'code', now 'accessToken'
 
-        if (code) {
-            // Coming back from Google — show loading overlay, hide form
-            document.getElementById('oauth-loading').classList.add('visible');
-            document.querySelector('.right-panel').style.display = 'none';
-            document.querySelector('.left-panel').style.display = 'none';
-            handleOAuthCallback();
-            return;
-        }
-
-        const token = localStorage.getItem('jwt_token');
-        const authType = localStorage.getItem('auth_type');
-        if (token || authType === 'session') {
-            redirectByRole(token, authType);
-        }
-   };
+    if (accessToken) {
+        // Coming back from Spring OAuth success handler
+        document.getElementById('oauth-loading').classList.add('visible');
+        document.querySelector('.right-panel').style.display = 'none';
+        document.querySelector('.left-panel').style.display = 'none';
+        handleOAuthCallback();
+    }
+};
 </script>
 </body>
 </html>
