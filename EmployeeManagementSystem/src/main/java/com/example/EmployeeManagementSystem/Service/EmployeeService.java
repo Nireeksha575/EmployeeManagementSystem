@@ -8,7 +8,6 @@ import com.example.EmployeeManagementSystem.Enum.Status;
 import com.example.EmployeeManagementSystem.Exception.EmployeeNotFound;
 import com.example.EmployeeManagementSystem.Repository.EmployeeRepo;
 import com.example.EmployeeManagementSystem.Repository.LeaveRequestRepo;
-import com.example.EmployeeManagementSystem.Util.AuthUtil;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,9 +125,8 @@ public class EmployeeService {
     }
 
     public Employee getAccount(Authentication authentication) {
-        String email= AuthUtil.extractEmail(authentication);
-        Employee employee=employeeRepo.findByEmail( email).orElseThrow(
-                ()-> new EmployeeNotFound("Employee :"+email+" NOT FOUND")
+        Employee employee=employeeRepo.findByEmail( authentication.getName()).orElseThrow(
+                ()-> new EmployeeNotFound("Employee :"+authentication.getName()+" NOT FOUND")
 
         );
         return employee;

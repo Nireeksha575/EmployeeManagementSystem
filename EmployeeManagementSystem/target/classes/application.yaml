@@ -49,12 +49,8 @@ spring:
       client:
         registration:
           google:
-              client-id: ${client_id}
-              client-secret: ${client_secret}
-              scope:
-              - email
-              - profile
-
+            client-id: ${client_id}
+            client-secret: ${client_secret}
 
 logging:
   level:

@@ -14,7 +14,6 @@ import com.example.EmployeeManagementSystem.Exception.SubscriptionAlreadyExists;
 import com.example.EmployeeManagementSystem.Repository.EmployeeRepo;
 import com.example.EmployeeManagementSystem.Repository.RestaurantRepository;
 import com.example.EmployeeManagementSystem.Repository.SubscriptionRepository;
-import com.example.EmployeeManagementSystem.Util.AuthUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -54,10 +53,9 @@ public class SubscriptionService {
      * - No duplicate active subscription for the same employee + slot combination
      */
     public void addSubscription(SubscriptionRequest request,Authentication authentication) {
-        String email= AuthUtil.extractEmail(authentication);
-        Employee employee = employeeRepo.findByEmail(email)
+        Employee employee = employeeRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new EmployeeNotFound(
-                        "Employee with id " + email + " not found"));
+                        "Employee with id " + authentication.getName() + " not found"));
 
         if (request.getSlotOrders() == null || request.getSlotOrders().isEmpty()) {
             throw new IllegalArgumentException("slotOrders cannot be null or empty");
@@ -192,8 +190,7 @@ public class SubscriptionService {
     }
 
     public List<SubscriptionDTO> getSubscriptionOfUser(Authentication authentication) {
-        String email= AuthUtil.extractEmail(authentication);
-        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_Email(email);
+        List<Subscription> subscriptions = subscriptionRepository.findByEmployee_Email(authentication.getName());
         List<SubscriptionDTO> dtoList = new ArrayList<>();
         for (Subscription s : subscriptions) {
             dtoList.add(convertToDTO(s));
